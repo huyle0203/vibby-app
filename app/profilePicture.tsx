@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import NextButton from '@/components/NextButton';
+import BackButton from '@/components/BackButton';
 
 const { width, height } = Dimensions.get('window');
 
@@ -85,16 +86,11 @@ export default function ProfilePictureScreen() {
         ))}
       </View>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerButtonText}>{'<'}</Text>
-        </TouchableOpacity>
+        <BackButton router={router} />
         <View style={styles.progressBar}>
           <View style={styles.progress} />
         </View>
-        {/* <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerButtonText}>{'>'}</Text>
-        </TouchableOpacity> */}
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/profilePicture" />
+        <NextButton router={router as { push: (route: string) => void }} nextRoute="/tagsSelection" />
       </View>
     </View>
     </ScreenWrapper>
@@ -180,19 +176,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginTop: height * 0.05,
-  },
-  footerButton: {
-    backgroundColor: '#3A93FA',
-    borderRadius: width * 0.06,
-    width: width * 0.12,
-    height: width * 0.12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footerButtonText: {
-    color: '#FFFFFF',
-    fontSize: width * 0.06,
-    fontWeight: 'bold',
   },
   progressBar: {
     flex: 1,

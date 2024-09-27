@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import ScreenWrapper from '@/components/ScreenWrapper';
+import BackButton from '@/components/BackButton';
+import NextButton from '@/components/NextButton';
+import { useRouter } from 'expo-router';
 
 const categories = [
   {
@@ -19,6 +23,7 @@ const categories = [
 
 export default function TagSelectionScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const router = useRouter();
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -27,6 +32,7 @@ export default function TagSelectionScreen() {
   };
 
   return (
+    <ScreenWrapper>
     <View style={styles.container}>
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -58,17 +64,14 @@ export default function TagSelectionScreen() {
       </ScrollView>
       
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerButtonText}>{'<'}</Text>
-        </TouchableOpacity>
+        <BackButton router={router} />
         <View style={styles.progressBar}>
           <View style={styles.progress} />
         </View>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerButtonText}>{'>'}</Text>
-        </TouchableOpacity>
+        <NextButton router={router as { push: (route: string) => void }} nextRoute="/highlightBio" />
       </View>
     </View>
+    </ScreenWrapper>
   );
 }
 
@@ -131,18 +134,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-  },
-  footerButton: {
-    backgroundColor: '#3498db',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerButtonText: {
-    color: '#fff',
-    fontSize: 20,
   },
   progressBar: {
     flex: 1,

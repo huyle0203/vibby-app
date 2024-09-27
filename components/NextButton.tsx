@@ -27,4 +27,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#3A93FA'
   }
-})
+}
+)

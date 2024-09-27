@@ -3,12 +3,12 @@ import { Pressable, StyleSheet } from 'react-native'
 import { Iconify } from 'react-native-iconify'
 import { theme } from '@/constants/theme'
 
-interface BackButtonProps {
+interface BackButtonSmallProps {
   size?: number;
   router: { back: () => void };
 }
 
-export default function BackButton({ size = 30, router }: BackButtonProps) {
+export default function BackButtonSmall({ size = 26, router }: BackButtonSmallProps) {
   return (
     <Pressable onPress={() => router.back()} style={styles.button}>
         <Iconify icon="iconamoon:arrow-left-2-bold" strokeWidth={2.6} size={size} color={theme.colors.text} />
@@ -18,13 +18,9 @@ export default function BackButton({ size = 30, router }: BackButtonProps) {
 
 const styles = StyleSheet.create({
     button: {
-      alignSelf: 'flex-start',
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#3A93FA'
+        alignSelf: 'flex-start',
+        padding: 5,
+        borderRadius: theme.radius.sm,
+        backgroundColor: '#000'
     }
-  }
-)
+})

@@ -5,7 +5,7 @@ import { theme } from '@/constants/theme'
 import { useRouter } from 'expo-router'
 import ScreenWrapper from '@/components/ScreenWrapper'
 import { StatusBar } from 'expo-status-bar'
-import BackButton from '@/components/BackButton'
+import BackButtonSmall from '@/components/BackButtonSmall'
 import Input from '@/components/Input'
 import { Iconify } from 'react-native-iconify'
 import Button from '@/components/Button'
@@ -25,7 +25,7 @@ const Login = () => {
     <ScreenWrapper bg='black'>
         <StatusBar style='light' />
         <View style={styles.container}>
-            <BackButton router={router} />
+            <BackButtonSmall router={router} />
 
             {/* welcome */}
             <View>
