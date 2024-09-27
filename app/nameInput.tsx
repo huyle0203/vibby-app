@@ -100,7 +100,7 @@ export default function NameInputScreen() {
           { transform: [{ translateY: buttonPosition }] },
         ]}
       >
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/profilePicture" />
+        <NextButton router={router as { push: (route: string) => void }} nextRoute="/dobScreen" />
         {/* <TouchableOpacity style={styles.button}>
           <Ionicons name="arrow-forward" size={24} color="white" />
         </TouchableOpacity> */}

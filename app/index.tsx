@@ -18,6 +18,8 @@ const index = () => {
             <Button title="aiSummaryScreen" onPress={() => router.push({ pathname: '/aiSummaryScreen' })} />
             <Button title="main" onPress={() => router.push({ pathname: '/(tabs)/two' })} />
             <Button title="nameInputScreen" onPress={() => router.push({ pathname: '/nameInput' })} />
+            <Button title="imageSelection" onPress={() => router.push({ pathname: '/imagesSelection' })} />
+            
 
         </View>
     )

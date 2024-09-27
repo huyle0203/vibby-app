@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import NextButton from '@/components/NextButton';
 import BackButton from '@/components/BackButton';
+import { hp, wp } from './helpers/common';
 
 const { width, height } = Dimensions.get('window');
 
@@ -106,17 +107,17 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: width * 0.07,
+    fontSize: hp(3.5),
     color: '#FFFFFF',
     fontWeight: 'bold',
     textAlign: 'center',
+
   },
   subtitle: {
-    fontSize: width * 0.04,
+    fontSize: hp(2),
     color: '#FFFFFF',
     opacity: 0.7,
     textAlign: 'center',
-    marginTop: 10,
   },
   profilePictureContainer: {
     position: 'relative',

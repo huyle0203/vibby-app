@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import BackButton from '@/components/BackButton';
 import NextButton from '@/components/NextButton';
 import { useRouter } from 'expo-router';
+import { hp, wp } from './helpers/common';
+
+const { width, height } = Dimensions.get('window')
 
 const categories = [
   {
@@ -37,7 +40,7 @@ export default function TagSelectionScreen() {
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Choose your tags</Text>
-        <Text style={styles.subtitle}>Pick what describes you and helps others find you!</Text>
+        <Text style={styles.subtitle}>Pick what describes you and {'\n'} helps others find you!</Text>
         
         {categories.map((category, index) => (
           <View key={index} style={styles.categoryContainer}>
@@ -85,17 +88,18 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: hp(3.5),
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: hp(2),
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,
+    opacity: 0.7,
   },
   categoryContainer: {
     marginBottom: 20,
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   progress: {
-    width: '50%',
+    width: '75%',
     height: '100%',
     backgroundColor: '#3498db',
   },
