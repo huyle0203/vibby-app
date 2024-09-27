@@ -23,7 +23,7 @@ const Login = () => {
     } 
   return (
     <ScreenWrapper bg='black'>
-        <StatusBar style='dark' />
+        <StatusBar style='light' />
         <View style={styles.container}>
             <BackButton router={router} />
 

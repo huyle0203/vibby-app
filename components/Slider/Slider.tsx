@@ -1,86 +1,75 @@
-import React, { useEffect, useRef } from "react";
-import { View, useWindowDimensions, Text, ImageBackground } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, Image, Dimensions } from "react-native";
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
   Easing, 
-  runOnJS,
-  useAnimatedReaction
+  withRepeat,
+  cancelAnimation
 } from "react-native-reanimated";
 import { styles } from "./styles";
 
-const SLIDE_WIDTH = 6 * (191 + 32); // 6 items * (box width + marginRight)
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const BOX_WIDTH = 191;
+const BOX_MARGIN = 32;
+const SLIDE_WIDTH = 6 * (BOX_WIDTH + BOX_MARGIN);
+
+interface SliderItem {
+  id: number;
+  image: any;
+  name: string;
+  bio: string;
+}
+
+const data: SliderItem[] = [
+  { id: 1, image: require("../../assets/images/penguin2.png"), name: "Vibby", bio: "ur favorite cat penguin that helps u vibe" },
+  { id: 2, image: require("../../assets/images/kanna.jpeg"), name: "Uyen", bio: "i wanna be a princess & im looking for a prince" },
+  { id: 3, image: require("../../assets/images/gigachad.png"), name: "Archer", bio: "im a weeb and i love anime" },
+  { id: 4, image: require("../../assets/images/gigachad.png"), name: "Devam", bio: "3rd year cs student bruh" },
+  { id: 5, image: require("../../assets/images/gigachad.png"), name: "Jason", bio: "handsome Chinese boy" },
+  { id: 6, image: require("../../assets/images/gigachad.png"), name: "Huy", bio: "the creator of this app lmao" },
+];
 
 export default function Slider() {
-  const dimensions = useWindowDimensions();
-  const slideX = useSharedValue(0);
-  const slidesRef = useRef([0, 1]);
+  const translateX = useSharedValue(0);
 
-  const createSlideAnimatedStyle = (index: number) => useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value + index * SLIDE_WIDTH }],
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
   }));
 
-  const slideAnimatedStyle1 = createSlideAnimatedStyle(0);
-  const slideAnimatedStyle2 = createSlideAnimatedStyle(1);
-
-  const resetPosition = () => {
-    'worklet';
-    if (slideX.value <= -SLIDE_WIDTH) {
-      slideX.value += SLIDE_WIDTH;
-      runOnJS(updateSlideOrder)();
-    }
-  };
-
-  const updateSlideOrder = () => {
-    slidesRef.current = [slidesRef.current[1], slidesRef.current[0]];
-  };
-
-  useAnimatedReaction(
-    () => slideX.value,
-    () => resetPosition(),
-    [slideX]
-  );
-
-  const startAnimation = () => {
-    slideX.value = withTiming(-SLIDE_WIDTH, {
-      duration: 80000,
-      easing: Easing.linear,
-    }, () => {
-      slideX.value = 0;
-      runOnJS(updateSlideOrder)();
-      runOnJS(startAnimation)(); // Restart the animation
-    });
-  };
-
   useEffect(() => {
-    startAnimation();
+    const duration = 80000; // 80 seconds for one complete cycle
+    translateX.value = withRepeat(
+      withTiming(-SLIDE_WIDTH, {
+        duration,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+
+    return () => {
+      cancelAnimation(translateX);
+    };
   }, []);
 
-  const renderBox = (source: any, mainText: string, subText: string) => (
-    <View style={styles.box}>
+  const renderBox = (item: SliderItem) => (
+    <View key={item.id} style={styles.box}>
       <View style={styles.imageContainer}>
-        <ImageBackground source={source} style={styles.image} imageStyle={styles.imageBackground} />
+        <Image source={item.image} style={styles.image} />
       </View>
-      <Text style={styles.mainText}>{mainText}</Text>
-      <Text style={styles.subText}>{subText}</Text>
+      <Text style={styles.mainText}>{item.name}</Text>
+      <Text style={styles.subText}>{item.bio}</Text>
     </View>
-  );
-
-  const renderSlide = (key: number) => (
-    <Animated.View key={key} style={[styles.slide, key === 0 ? slideAnimatedStyle1 : slideAnimatedStyle2]}>
-      {renderBox(require("../../assets/images/penguin2.png"), "Vibby", "ur favorite cat penguin that helps u vibe")}
-      {renderBox(require("../../assets/images/kanna.jpeg"), "Uyen", "i wanna be a princess & im looking for a prince")}
-      {renderBox(require("../../assets/images/gigachad.png"), "Archer", "im a weeb and i love anime")}
-      {renderBox(require("../../assets/images/gigachad.png"), "Devam", "3rd year cs student bruh")}
-      {renderBox(require("../../assets/images/gigachad.png"), "Jason", "handsome Chinese boy")}
-      {renderBox(require("../../assets/images/gigachad.png"), "Huy", "the creator of this app lmao")}
-    </Animated.View>
   );
 
   return (
     <View style={styles.container}>
-      {slidesRef.current.map(renderSlide)}
+      <Animated.View style={[styles.slide, animatedStyle]}>
+        {data.map(renderBox)}
+        {data.map(renderBox)}
+      </Animated.View>
     </View>
   );
 }

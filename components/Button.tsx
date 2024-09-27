@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderCurve: 'continuous',
-        borderRadius: theme.radius.xs,
+        borderRadius: theme.radius.lg,
     },
     text: {
         fontSize: hp(2.5),

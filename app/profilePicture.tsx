@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Button, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
-import { hp, wp } from '@/app/helpers/common';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import { Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from 'expo-router';
+import ScreenWrapper from '@/components/ScreenWrapper';
+import NextButton from '@/components/NextButton';
+
+const { width, height } = Dimensions.get('window');
+
 type Avatar = {
   source: ImageSourcePropType;
 };
 
-const router = useRouter();
-
-const ProfilePictureScreen: React.FC = () => {
+export default function ProfilePictureScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [mainProfilePicture, setMainProfilePicture] = useState<ImageSourcePropType>(
     require('../assets/images/penguin2.png')
   );
+  const router = useRouter();
 
   const avatars: Avatar[] = [
-    { source: require('../assets/images/huy.jpg') },
-    { source: require('../assets/images/alpaca.jpeg') },
-    { source: require('../assets/images/axotl.png') },
-    { source: require('../assets/images/sloth.jpeg') },
-    { source: require('../assets/images/sloth.jpeg') },
-    { source: require('../assets/images/capybara.jpeg') },
-    { source: require('../assets/images/gigachad.png') },
-    { source: require('../assets/images/gigachad.png') },
-    { source: require('../assets/images/gigachad.png') },
+    { source: require('../assets/images/vibbyBlue.png') },
+    { source: require('../assets/images/vibbyPink.png') },
+    { source: require('../assets/images/vibbyRed.png') },
+    { source: require('../assets/images/vibbyGreen.png') },
+    { source: require('../assets/images/vibbyPurple.png') },
+    { source: require('../assets/images/vibbyBlack.png') },
+    { source: require('../assets/images/vibbyPink.png') },
+    { source: require('../assets/images/vibbyRed.png') },
   ];
 
   const handleAvatarPress = (index: number): void => {
@@ -34,14 +36,12 @@ const ProfilePictureScreen: React.FC = () => {
   };
 
   const handleImageUpload = async () => {
-    // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       alert('Sorry, we need camera roll permissions to make this work!');
       return;
     }
 
-    // Launch image picker
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -49,19 +49,14 @@ const ProfilePictureScreen: React.FC = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      // Use the selected image
-      if (result.assets && result.assets.length > 0) {
-        setMainProfilePicture({ uri: result.assets[0].uri });
-        setSelectedAvatar(null);
-
-        // Save the image to the device's media library
-        await MediaLibrary.saveToLibraryAsync(result.assets[0].uri);
-      }
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setMainProfilePicture({ uri: result.assets[0].uri });
+      setSelectedAvatar(null);
     }
   };
 
   return (
+    <ScreenWrapper>
     <View style={styles.container}>
       <Text style={styles.title}>Choose profile picture</Text>
       <Text style={styles.subtitle}>Choose a photo that represents you!</Text>
@@ -89,108 +84,125 @@ const ProfilePictureScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/highlightBio')}>
-        <Text style={styles.buttonText}>Let's Vibe!</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.footerButton}>
+          <Text style={styles.footerButtonText}>{'<'}</Text>
+        </TouchableOpacity>
+        <View style={styles.progressBar}>
+          <View style={styles.progress} />
+        </View>
+        {/* <TouchableOpacity style={styles.footerButton}>
+          <Text style={styles.footerButtonText}>{'>'}</Text>
+        </TouchableOpacity> */}
+        <NextButton router={router as { push: (route: string) => void }} nextRoute="/profilePicture" />
+      </View>
     </View>
+    </ScreenWrapper>
   );
-};
-const fourAvatarsWidth = wp(15) * 4;
-
-// Calculate the width of three gaps (10px each)
-const gapsWidth = 1;
-
-// Sum these up for the total maxWidth
-const maxWidth = fourAvatarsWidth + gapsWidth;
-
-// Round up to the nearest integer to ensure all avatars fit
-const roundedMaxWidth = Math.ceil(maxWidth);
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'black',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
+    justifyContent: 'space-between',
+    padding: 20,
   },
   title: {
-    fontSize: hp(3.6),
+    fontSize: width * 0.07,
     color: '#FFFFFF',
-    marginBottom: 10,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: hp(1.8),
+    fontSize: width * 0.04,
     color: '#FFFFFF',
-    marginBottom: 20,
     opacity: 0.7,
+    textAlign: 'center',
+    marginTop: 10,
   },
   profilePictureContainer: {
     position: 'relative',
-    marginBottom: 20,
+    marginTop: height * 0.05,
   },
   profilePicture: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: width * 0.5,
+    height: width * 0.5,
+    borderRadius: width * 0.25,
   },
   addButton: {
     position: 'absolute',
-    bottom: 150,
-    right: 10,
-    backgroundColor: '#00BFFF',
-    borderRadius: 50,
-    width: 50,
-    height: 50,
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: width * 0.06,
+    width: width * 0.12,
+    height: width * 0.12,
     alignItems: 'center',
     justifyContent: 'center',
+    borderColor: "black",
+    borderWidth: 2,
   },
   addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 50,
-    
+    color: '#000000',
+    fontSize: width * 0.08,
+    fontWeight: 'bold',
   },
   orText: {
     color: '#FFFFFF',
-    marginVertical: 20,
     opacity: 0.7,
-    fontSize: hp(1.8),
+    fontSize: width * 0.04,
+    marginTop: height * 0.03,
   },
   avatarContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '100%',
-    maxWidth: roundedMaxWidth, // Adjusted based on new avatar size
+    justifyContent: 'center',
+    marginTop: height * 0.02,
   },
   avatarWrapper: {
-    padding: 0.,
-    borderRadius: wp(25) + 4, // Slightly larger than the avatar
-    marginTop: 10,
-    marginBottom: 10,
+    margin: width * 0.02,
   },
   selectedAvatarWrapper: {
     borderWidth: 2,
     borderColor: 'white',
+    borderRadius: width * 0.1,
   },
   avatar: {
-    width: wp(15),
-    height: wp(15),
-    borderRadius: 30,
-    margin: 10,
+    width: width * 0.16,
+    height: width * 0.16,
+    borderRadius: width * 0.08,
   },
-  button: {
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: height * 0.05,
+  },
+  footerButton: {
     backgroundColor: '#3A93FA',
-    borderRadius: 10,
-    paddingVertical: hp(2),
-    paddingHorizontal: wp(5),
+    borderRadius: width * 0.06,
+    width: width * 0.12,
+    height: width * 0.12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: {
+  footerButtonText: {
     color: '#FFFFFF',
-    fontSize: hp(2),
+    fontSize: width * 0.06,
     fontWeight: 'bold',
   },
-  });
-
-export default ProfilePictureScreen;
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#333',
+    marginHorizontal: 10,
+  },
+  progress: {
+    width: '50%',
+    height: '100%',
+    backgroundColor: '#3A93FA',
+  },
+});

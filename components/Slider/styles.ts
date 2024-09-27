@@ -1,58 +1,56 @@
-import { StyleSheet } from "react-native";
-import { hp } from "@/app/helpers/common";
+import { StyleSheet, Dimensions } from "react-native";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const BOX_WIDTH = 191;
+const BOX_HEIGHT = 258;
+const BOX_MARGIN = 32;
 
 export const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    height: BOX_HEIGHT,
     overflow: "hidden",
+    width: SCREEN_WIDTH,
   },
   slide: {
     flexDirection: "row",
   },
   box: {
-    width: 191, // Set the width to 191
-    height: 258, // Set the height to 258
-    marginRight: 32, // Adjust the margin as needed
+    width: BOX_WIDTH,
+    height: BOX_HEIGHT,
+    marginRight: BOX_MARGIN,
     alignItems: "center",
-    justifyContent: "center", // Center content vertically
-    backgroundColor: "#000", // Add background color to make the box visible
-    padding: 5, // Add padding to the box
+    justifyContent: "center",
+    backgroundColor: "#000",
+    padding: 5,
     borderColor: '#3A93FA',
     borderWidth: 2,
     borderRadius: 13
   },
   imageContainer: {
-    width: 171, // Adjust the container size as needed
-    height: 171, // Adjust the container size as needed
-    borderRadius: 85.5, // Half of the width and height to make it circular
-    overflow: "hidden", // Ensure the image is contained within the circle
-    marginBottom: 0, // Reduce the space between image and text
+    width: 171,
+    height: 171,
+    borderRadius: 85.5,
+    overflow: "hidden",
+    marginBottom: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000", // Background color for the circle
+    backgroundColor: "#000",
   },
   image: {
-    width: "80%", // Make the image fill the container
-    height: "80%", // Make the image fill the container
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center", // Center the image horizontally
-  },
-  imageBackground: {
-    borderRadius: 85.5, // Ensure the image itself is rounded
+    width: "80%",
+    height: "80%",
+    borderRadius: 85.5,
   },
   mainText: {
-    fontSize: hp(2), // Adjust the text size as needed
+    fontSize: 16,
     textAlign: "center",
-    marginBottom: 2, // Reduce the space between main text and sub text
+    marginBottom: 2,
     fontWeight: 'bold',
     color: '#fff',
-    alignSelf: "center"
   },
   subText: {
-    fontSize: hp(1.5), // Adjust the text size as needed
+    fontSize: 12,
     textAlign: "center",
     color: '#fff',
-    alignSelf: "center"
   },
 });

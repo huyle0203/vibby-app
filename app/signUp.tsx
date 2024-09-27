@@ -51,7 +51,7 @@ const SignUp = () => {
                 />
                 <Input 
                 icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
-                placeholder="Enter your pass"
+                placeholder="Enter your password"
                 secureTextEntry
                 onChangeText={(value: string)=> passwordRef.current = value}
                 />
