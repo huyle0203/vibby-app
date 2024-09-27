@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
-import NextButton from '@/components/NextButton';
-import BackButton from '@/components/BackButton';
+import NextButton from '@/components/Buttons/NextButton';
+import BackButton from '@/components/Buttons/BackButton';
 
 interface PhotoItem {
   uri: string;
@@ -98,7 +98,7 @@ export default function ImageSelectionScreen() {
           </View>
           <NextButton 
             router={router as { push: (route: string) => void }} 
-            nextRoute="/nextScreen"
+            nextRoute="/highlightBio"
             // disabled={selectedPhotos.length < 6}
           />
         </View>
@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 4,
-    backgroundColor: '#ddd',
+    backgroundColor: '#333',
     marginHorizontal: 10,
   },
   progress: {
     width: '66%',
     height: '100%',
-    backgroundColor: '#8E44AD',
+    backgroundColor: '#3498db',
   },
 });

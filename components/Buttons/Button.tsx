@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View, ViewStyle, TextStyle } from 'react-n
 import React from 'react';
 import { theme } from '@/constants/theme';
 import { hp, wp } from '@/app/helpers/common';
-import Loading from './Loading';
+import Loading from '../Loading';
 interface ButtonProps {
     buttonStyle?: ViewStyle;
     textStyle?: TextStyle;

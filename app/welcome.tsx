@@ -4,7 +4,7 @@ import { hp, wp } from "./helpers/common";
 import { theme } from "@/constants/theme";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { StyleSheet, Text, View, Pressable, ImageBackground } from "react-native";
-import Button from "@/components/Button";
+import Button from "@/components/Buttons/Button";
 import { router } from "expo-router";
 
 export default function Welcome() {

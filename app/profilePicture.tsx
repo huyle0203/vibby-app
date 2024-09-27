@@ -4,8 +4,8 @@ import { Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
-import NextButton from '@/components/NextButton';
-import BackButton from '@/components/BackButton';
+import NextButton from '@/components/Buttons/NextButton';
+import BackButton from '@/components/Buttons/BackButton';
 import { hp, wp } from './helpers/common';
 
 const { width, height } = Dimensions.get('window');
@@ -28,7 +28,7 @@ export default function ProfilePictureScreen() {
     { source: require('../assets/images/vibbyGreen.png') },
     { source: require('../assets/images/vibbyPurple.png') },
     { source: require('../assets/images/vibbyBlack.png') },
-    { source: require('../assets/images/vibbyPink.png') },
+    { source: require('../assets/images/vibbyYellow.png') },
     { source: require('../assets/images/vibbyRed.png') },
   ];
 

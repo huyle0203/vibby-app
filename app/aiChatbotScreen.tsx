@@ -1,7 +1,7 @@
 import { View, Text, SafeAreaView, StyleSheet, ScrollView, Button } from 'react-native';
 import React, { useState } from 'react';
 import { hp, wp } from './helpers/common';
-import BackButton from '@/components/BackButtonSmall';
+import BackButton from '@/components/Buttons/BackButtonSmall';
 import { router } from 'expo-router';
 import { dummyMessages } from '@/constants';
 import Feature from '@/components/Feature';

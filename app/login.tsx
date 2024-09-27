@@ -5,10 +5,10 @@ import { theme } from '@/constants/theme'
 import { useRouter } from 'expo-router'
 import ScreenWrapper from '@/components/ScreenWrapper'
 import { StatusBar } from 'expo-status-bar'
-import BackButtonSmall from '@/components/BackButtonSmall'
+import BackButtonSmall from '@/components/Buttons/BackButtonSmall'
 import Input from '@/components/Input'
 import { Iconify } from 'react-native-iconify'
-import Button from '@/components/Button'
+import Button from '@/components/Buttons/Button'
 
 const Login = () => {
     const router = useRouter();

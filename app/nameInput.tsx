@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import NextButton from '@/components/NextButton';
+import NextButton from '@/components/Buttons/NextButton';
 import { useRouter } from 'expo-router';
 
 export default function NameInputScreen() {

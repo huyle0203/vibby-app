@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import NextButton from '@/components/NextButton';
+import NextButton from '@/components/Buttons/NextButton';
+import BackButton from '@/components/Buttons/BackButton';
 import { useRouter } from 'expo-router';
 
 export default function DateOfBirthScreen() {
@@ -31,7 +32,6 @@ export default function DateOfBirthScreen() {
       keyboardWillHide
     );
 
-    // Focus on the first input when the component mounts
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
 
     return () => {
@@ -67,15 +67,33 @@ export default function DateOfBirthScreen() {
       } else {
         validateDate(newDate);
       }
+    } else if (newDate[index].length === 0 && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
+
+    validateDate(newDate);
   };
 
   const validateDate = (date: string[]) => {
     const [day, month, year] = date;
+    
     if (day && month && year && year.length === 4) {
-      const isValidDate = !isNaN(Date.parse(`${year}-${month}-${day}`));
+      const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const currentDate = new Date();
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() - 120);
+
+      const isValidDate = !isNaN(parsedDate.getTime()) && 
+                          parsedDate.getFullYear() === parseInt(year) &&
+                          parsedDate.getMonth() === parseInt(month) - 1 &&
+                          parsedDate.getDate() === parseInt(day);
+      
       if (!isValidDate) {
         setError('Enter a valid date of birth.');
+      } else if (parsedDate > currentDate) {
+        setError('Date of birth cannot be in the future.');
+      } else if (parsedDate < maxDate) {
+        setError('Please enter a more recent date of birth.');
       } else {
         setError('');
       }
@@ -89,7 +107,7 @@ export default function DateOfBirthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
@@ -115,7 +133,7 @@ export default function DateOfBirthScreen() {
                 value={dateOfBirth[index]}
                 onChangeText={(text) => handleDateChange(text, index)}
                 placeholder={input.placeholder}
-                placeholderTextColor="#999"
+                placeholderTextColor="#666"
                 keyboardType="number-pad"
                 maxLength={index === 2 ? 4 : 2}
               />
@@ -134,7 +152,15 @@ export default function DateOfBirthScreen() {
           { transform: [{ translateY: buttonPosition }] },
         ]}
       >
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/nextScreen" />
+        <BackButton router={router} />
+        <View style={styles.progressBar}>
+          <View style={styles.progress} />
+        </View>
+        <NextButton 
+          router={router as { push: (route: string) => void }} 
+          nextRoute="/profilePicture"
+          // disabled={!!error || dateOfBirth.some(part => part === '')}
+        />
       </Animated.View>
     </KeyboardAvoidingView>
   );
@@ -143,7 +169,7 @@ export default function DateOfBirthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   content: {
     flex: 1,
@@ -171,17 +197,18 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#ddd',
+    backgroundColor: '#333',
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#fff'
   },
   inputContainer: {
     flexDirection: 'row',
@@ -193,8 +220,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: '#000',
+    borderBottomColor: '#fff',
     paddingVertical: 5,
+    color: '#fff',
   },
   inputDay: {
     width: 40,
@@ -204,20 +232,33 @@ const styles = StyleSheet.create({
   },
   separator: {
     fontSize: 24,
-    color: '#000',
+    color: '#fff',
+    marginHorizontal: 5,
   },
   errorText: {
     color: 'red',
     marginBottom: 10,
+    textAlign: 'center',
   },
   note: {
     fontSize: 14,
-    color: '#666',
+    color: '#fff',
     textAlign: 'center',
   },
   buttonContainer: {
     position: 'absolute',
     bottom: 20,
     right: 20,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#333',
+    marginHorizontal: 10,
+  },
+  progress: {
+    width: '50%',
+    height: '100%',
+    backgroundColor: '#3A93FA',
   },
 });

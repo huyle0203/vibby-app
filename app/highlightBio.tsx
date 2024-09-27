@@ -3,8 +3,8 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform } from 'r
 import { useRouter } from 'expo-router';
 import { hp, wp } from '@/app/helpers/common';
 import { theme } from '@/constants/theme'
-import BackButton from '@/components/BackButton';
-import NextButton from '@/components/NextButton';
+import BackButton from '@/components/Buttons/BackButton';
+import NextButton from '@/components/Buttons/NextButton';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import { StatusBar } from 'expo-status-bar';
 
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   progress: {
-    width: '75%',
+    width: '100%',
     height: '100%',
     backgroundColor: '#3498db',
   },
