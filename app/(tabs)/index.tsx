@@ -1,19 +1,24 @@
-import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated } from 'react-native';
+import React, { useRef, useState, useContext, useEffect } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated, View } from 'react-native';
 import Header from '@/components/Header';
 import Lottie from 'lottie-react-native';
-import * as React from 'react';
 import { ThreadsContext } from '@/context/thread-context';
 import ThreadItem from '@/components/ThreadItem';
-import { createRandomUser } from '@/utils/generate-dommy-data';
-
-const user = createRandomUser();
-console.log(JSON.stringify(user, null, 2));
+import { createRandomUser, generateThreads } from '@/utils/generate-dommy-data';
+import PostCreationArea from '@/components/PostCreationArea';
+import { Thread, User } from '@/types/threads';
 
 export default function TabOneScreen() {
-  const animationRef = React.useRef<Lottie>(null);
-  const threads = React.useContext(ThreadsContext);
-  const [isHeaderVisible, setHeaderVisible] = React.useState(true);
-  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Lottie>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isHeaderVisible, setHeaderVisible] = useState(true);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    setCurrentUser(createRandomUser());
+    setThreads(generateThreads());
+  }, []);
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -21,42 +26,63 @@ export default function TabOneScreen() {
   );
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50], // Adjust the range as needed
+    inputRange: [0, 50],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
+  const handleRefresh = () => {
+    animationRef.current?.play();
+    setThreads(generateThreads());
+  };
+
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.container}>
       <Animated.View style={{ opacity: headerOpacity }}>
         <Header />
       </Animated.View>
       <Animated.ScrollView
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingHorizontal: 10,
-          paddingTop: Platform.select({ android: 30 }),
-        }}
+        contentContainerStyle={styles.scrollViewContent}
         refreshControl={
-          <RefreshControl refreshing={false} 
-          onRefresh={() => {animationRef.current?.play()}}
-          tintColor={"transparent"}/>
+          <RefreshControl 
+            refreshing={false} 
+            onRefresh={handleRefresh}
+            tintColor={"transparent"}
+          />
         }
       >
         <Lottie 
-        ref={animationRef}
-        source={require("../../assets/lottie-animations/penguin.json")}
-        loop={false}
-        autoPlay
-        style={{ width: 90, height: 90, alignSelf: "center" }}
+          ref={animationRef}
+          source={require("../../assets/lottie-animations/penguin.json")}
+          loop={false}
+          autoPlay
+          style={styles.lottieAnimation}
         />
-      {threads.map((thread) => (
-        <ThreadItem key={thread.id} thread={thread} />
-      ))}
+        {currentUser && (
+          <PostCreationArea userPhoto={currentUser.photo} username={currentUser.username} />
+        )}
+        {threads.map((thread) => (
+          <ThreadItem key={thread.id} thread={thread} />
+        ))}
       </Animated.ScrollView>
     </SafeAreaView>
   );
 }
 
-// ... existing code ...
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollViewContent: {
+    paddingHorizontal: 10,
+    paddingTop: Platform.select({ android: 30, ios: 0 }),
+  },
+  lottieAnimation: {
+    width: 90,
+    height: 90,
+    alignSelf: "center",
+  },
+});

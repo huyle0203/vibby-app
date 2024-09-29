@@ -52,7 +52,7 @@ export default function ImageSelectionScreen() {
           <Image source={{ uri: photo.uri }} style={styles.photoPreview} />
         ) : (
           <View style={styles.plusIcon}>
-            <Ionicons name="add" size={40} color="#8E44AD" />
+            <Ionicons name="add" size={40} color="#3498db" />
           </View>
         )}
       </TouchableOpacity>
@@ -74,14 +74,14 @@ export default function ImageSelectionScreen() {
           </View>
         </View>
 
-        <Text style={styles.title}>Pick your photos</Text>
+        <Text style={styles.title}>Show Us Who You Are</Text>
 
         <View style={styles.photoGrid}>
           {[...Array(6)].map((_, index) => renderPhotoBox(index))}
         </View>
 
         <Text style={styles.instruction}>Tap to edit, drag to reorder</Text>
-        <Text style={styles.requirement}>6 required</Text>
+        <Text style={styles.requirement}>You dont have to choose</Text>
 
         <View style={styles.infoBox}>
           <Ionicons name="bulb-outline" size={24} color="#8E44AD" />
@@ -110,7 +110,7 @@ export default function ImageSelectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     padding: 20,
   },
   header: {
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: '#000',
+    backgroundColor: '#3498db',
   },
   title: {
     fontSize: 28,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     width: '30%',
     aspectRatio: 1,
     borderWidth: 2,
-    borderColor: '#8E44AD',
+    borderColor: '#3498db',
     borderStyle: 'dashed',
     borderRadius: 10,
     marginBottom: 15,
