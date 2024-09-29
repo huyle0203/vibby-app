@@ -1,8 +1,5 @@
 import axios from 'axios';
-
-const OPENAI_API_KEY = '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';
-const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1';
-const ASSISTANT_ID = 'asst_4sSmUgw2zQSLVGMGV0Q8uc1j';
+import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, ASSISTANT_ID } from '@env';
 
 const api = axios.create({
   baseURL: OPENAI_API_ENDPOINT,
