@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, ASSISTANT_ID } from '@env';
+
+
+
 
 const api = axios.create({
   baseURL: OPENAI_API_ENDPOINT,
