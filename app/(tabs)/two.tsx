@@ -6,15 +6,19 @@ import Slider from '@/components/Slider/Slider';
 import SliderText from '@/components/SliderText/SliderText';
 import SliderTextReverse from '@/components/SliderTextReverse/SliderTextReverse';
 import { useRouter } from 'expo-router';
+import { useChatContext } from '@/context/ChatContext';
 
 export default function TabTwoScreen() {
   const colorScheme = useColorScheme();
   const [textValue, setTextValue] = useState('');
   const router = useRouter();
+  const { setInitialMessage } = useChatContext();
 
   const handleSubmit = () => {
-    // Handle submit logic here
-    console.log('Submitted:', textValue);
+    if (textValue.trim()) {
+      setInitialMessage(textValue);
+      router.push('/aiChatbotScreen');
+    }
   };
 
   return (
@@ -32,23 +36,19 @@ export default function TabTwoScreen() {
     
       <View style={[styles.separator, colorScheme === 'dark' ? styles.separatorDark : styles.separatorLight]} />
       
-      <RNView style={styles.bottomContainer}>
-        <KeyboardAvoidingView
-          style={styles.textInputWrapper}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
-          <CustomTextInput
-            value={textValue}
-            onChangeText={setTextValue}
-            onSubmitEditing={handleSubmit}
-            theme={colorScheme || 'light'}
-            onIconPress={() => {
-              router.push('/aiChatbotScreen');
-            }}
-          />
-        </KeyboardAvoidingView>
-      </RNView>
+      <KeyboardAvoidingView
+        style={styles.inputContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+      >
+        <CustomTextInput
+          value={textValue}
+          onChangeText={setTextValue}
+          onSubmitEditing={handleSubmit}
+          theme={colorScheme || 'light'}
+          onIconPress={handleSubmit}
+        />
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 40,
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 20,
   },
   heading: {
     fontSize: 44,
@@ -97,11 +97,13 @@ const styles = StyleSheet.create({
   separatorDark: {
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  textInputWrapper: {
-    width: '100%',
+  inputContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 10 : 10,
+    left: 0,
+    right: 0,
+    paddingTop: 10,
     paddingHorizontal: 20,
-  },
-  bottomContainer: {
-    width: '100%',
+    backgroundColor: '#000',
   },
 });

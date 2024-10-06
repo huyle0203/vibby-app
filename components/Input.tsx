@@ -16,7 +16,7 @@ const Input: React.FC<InputProps> = (props) => {
             props.icon && props.icon
         }
       <TextInput 
-        style={{flex: 1}}
+        style={[styles.input, props.style]}
         placeholderTextColor={theme.colors.textLight}
         ref={props.inputRef && props.inputRef}
         {...props}
@@ -33,11 +33,16 @@ const styles = StyleSheet.create({
         height: hp(7.2),
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 0.4,
+        borderWidth: 1,
         borderColor: theme.colors.text,
         borderRadius: theme.radius.xxl,
         borderCurve: 'continuous',
         paddingHorizontal: 18,
-        gap: 12
+        gap: 12,
+    },
+    input: {
+        flex: 1,
+        color: 'white', // This makes the typing text white
+        fontWeight: '600',
     }
 })

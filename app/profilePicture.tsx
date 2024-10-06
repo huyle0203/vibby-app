@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType, TouchableHighlight } from 'react-native';
 import { Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ type Avatar = {
 export default function ProfilePictureScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [mainProfilePicture, setMainProfilePicture] = useState<ImageSourcePropType>(
-    require('../assets/images/penguin2.png')
+    require('../assets/images/vibbyBlue.png')
   );
   const router = useRouter();
 
@@ -29,7 +29,7 @@ export default function ProfilePictureScreen() {
     { source: require('../assets/images/vibbyPurple.png') },
     { source: require('../assets/images/vibbyBlack.png') },
     { source: require('../assets/images/vibbyYellow.png') },
-    { source: require('../assets/images/vibbyRed.png') },
+    { source: require('../assets/images/vibbyGray.png') },
   ];
 
   const handleAvatarPress = (index: number): void => {
@@ -59,41 +59,47 @@ export default function ProfilePictureScreen() {
 
   return (
     <ScreenWrapper>
-    <View style={styles.container}>
-      <Text style={styles.title}>Choose profile picture</Text>
-      <Text style={styles.subtitle}>Choose a photo that represents you!</Text>
-      <View style={styles.profilePictureContainer}>
-        <Image
-          source={mainProfilePicture}
-          style={styles.profilePicture}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={handleImageUpload}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.orText}>or choose a Vibby avatar</Text>
-      <View style={styles.avatarContainer}>
-        {avatars.map((avatar, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => handleAvatarPress(index)}
-            style={[
-              styles.avatarWrapper,
-              selectedAvatar === index && styles.selectedAvatarWrapper
-            ]}
-          >
-            <Image source={avatar.source} style={styles.avatar} />
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View style={styles.footer}>
-        <BackButton router={router} />
-        <View style={styles.progressBar}>
-          <View style={styles.progress} />
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Choose profile picture</Text>
+          <Text style={styles.subtitle}>Choose a photo that represents you!</Text>
         </View>
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/tagsSelection" />
+        <View style={styles.profilePictureContainer}>
+          <Image
+            source={mainProfilePicture}
+            style={styles.profilePicture}
+          />
+          <TouchableHighlight style={styles.addButton} onPress={handleImageUpload}>
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableHighlight>
+        </View>
+        <View style={styles.avatarSection}>
+          <Text style={styles.orText}>or choose a Vibby avatar</Text>
+          <View style={styles.avatarContainer}>
+            {avatars.map((avatar, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleAvatarPress(index)}
+                style={styles.avatarWrapper}
+              >
+                <View style={[
+                  styles.avatarInner,
+                  selectedAvatar === index && styles.selectedAvatarInner
+                ]}>
+                  <Image source={avatar.source} style={styles.avatar} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+        <View style={styles.footer}>
+          <BackButton router={router} />
+          <View style={styles.progressBar}>
+            <View style={styles.progress} />
+          </View>
+          <NextButton router={router as { push: (route: string) => void }} nextRoute="/tagsSelection" />
+        </View>
       </View>
-    </View>
     </ScreenWrapper>
   );
 }
@@ -106,65 +112,74 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
   },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: height * 0.02,
+  },
   title: {
-    fontSize: hp(3.5),
-    color: '#FFFFFF',
+    fontSize: hp(4),
+    color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
-
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: hp(2),
     color: '#FFFFFF',
-    opacity: 0.7,
     textAlign: 'center',
   },
   profilePictureContainer: {
     position: 'relative',
-    marginTop: height * 0.05,
+    marginTop: height * 0.03,
   },
   profilePicture: {
-    width: width * 0.5,
-    height: width * 0.5,
-    borderRadius: width * 0.25,
+    width: width * 0.6,
+    height: width * 0.6,
+    borderRadius: width * 0.3,
   },
   addButton: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
-    borderRadius: width * 0.06,
-    width: width * 0.12,
-    height: width * 0.12,
+    borderRadius: width * 0.075,
+    width: width * 0.15,
+    height: width * 0.15,
     alignItems: 'center',
     justifyContent: 'center',
     borderColor: "black",
-    borderWidth: 2,
+    borderWidth: 2.5,
   },
   addButtonText: {
     color: '#000000',
-    fontSize: width * 0.08,
+    fontSize: width * 0.09,
     fontWeight: 'bold',
+  },
+  avatarSection: {
+    alignItems: 'center',
   },
   orText: {
     color: '#FFFFFF',
     opacity: 0.7,
-    fontSize: width * 0.04,
-    marginTop: height * 0.03,
+    fontSize: hp(2),
+    marginBottom: height * 0.01,
   },
   avatarContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginTop: height * 0.02,
   },
   avatarWrapper: {
     margin: width * 0.02,
   },
-  selectedAvatarWrapper: {
+  avatarInner: {
     borderWidth: 2,
-    borderColor: 'white',
+    borderColor: 'transparent',
     borderRadius: width * 0.1,
+    padding: 2,
+  },
+  selectedAvatarInner: {
+    borderColor: '#3A93FA',
   },
   avatar: {
     width: width * 0.16,

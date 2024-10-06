@@ -1,3 +1,4 @@
+import { hp, wp } from "@/app/helpers/common";
 import { StyleSheet, Dimensions } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,29 +28,30 @@ export const styles = StyleSheet.create({
     borderRadius: 13
   },
   imageContainer: {
-    width: 171,
-    height: 171,
-    borderRadius: 85.5,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     overflow: "hidden",
-    marginBottom: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000",
+    backgroundColor: '#3A93FA',
+    marginBottom: 10
   },
   image: {
-    width: "80%",
-    height: "80%",
-    borderRadius: 85.5,
+    width: "97%",
+    height: "97%",
+    borderRadius: 80,
   },
   mainText: {
-    fontSize: 16,
+    fontSize: hp(2.5),
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: 5,
     fontWeight: 'bold',
     color: '#fff',
   },
   subText: {
-    fontSize: 12,
+    fontSize: hp(1.5),
+    fontWeight: '500',
     textAlign: "center",
     color: '#fff',
   },

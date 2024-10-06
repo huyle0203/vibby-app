@@ -24,7 +24,7 @@ interface NewThreadModalProps {
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const MODAL_HEIGHT = SCREEN_HEIGHT * 0.9; // Modal covers 90% of the screen
+const MODAL_HEIGHT = SCREEN_HEIGHT * 0.88; // Modal covers 90% of the screen
 
 export default function NewThreadModal({ isVisible, onClose, userPhoto, username }: NewThreadModalProps) {
   const [postText, setPostText] = useState('');

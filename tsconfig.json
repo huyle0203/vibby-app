@@ -14,5 +14,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "env.d.ts"
-, "constants/dummyMessagea"  ]
+, "constants/dummyMessagea", "context/AuthContext.js"  ]
 }

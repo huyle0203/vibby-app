@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Keyboard,
   KeyboardAvoidingView,
@@ -11,101 +10,162 @@ import {
   Animated,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import NextButton from '@/components/Buttons/NextButton';
 import { useRouter } from 'expo-router';
+import NextButton2 from '@/components/Buttons/NextButton2';
+import ScreenWrapper from '@/components/ScreenWrapper';
+import { hp, wp } from './helpers/common';
 
 export default function NameInputScreen() {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const firstNameInputRef = useRef<TextInput>(null);
+  const [dateOfBirth, setDateOfBirth] = useState(['', '', '']);
+  const [error, setError] = useState('');
+  const inputRefs = useRef<Array<TextInput | null>>([null, null, null]);
   const buttonPosition = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      keyboardWillShow
-    );
-    const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      keyboardWillHide
-    );
+    const keyboardWillShow = (event: any) => {
+      Animated.timing(buttonPosition, {
+        toValue: -event.endCoordinates.height,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
 
-    // Focus on the first name input when the component mounts
+    const keyboardWillHide = () => {
+      Animated.timing(buttonPosition, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const keyboardWillShowListener = Platform.OS === 'ios'
+      ? Keyboard.addListener('keyboardWillShow', keyboardWillShow)
+      : Keyboard.addListener('keyboardDidShow', keyboardWillShow);
+    const keyboardWillHideListener = Platform.OS === 'ios'
+      ? Keyboard.addListener('keyboardWillHide', keyboardWillHide)
+      : Keyboard.addListener('keyboardDidHide', keyboardWillHide);
+
     setTimeout(() => firstNameInputRef.current?.focus(), 100);
-
+    
     return () => {
       keyboardWillShowListener.remove();
       keyboardWillHideListener.remove();
     };
   }, []);
 
-  const keyboardWillShow = (event: any) => {
-    Animated.timing(buttonPosition, {
-      toValue: -event.endCoordinates.height + 20,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
+  const handleDateChange = (text: string, index: number) => {
+    const newDate = [...dateOfBirth];
+    newDate[index] = text.replace(/[^0-9]/g, '');
+    setDateOfBirth(newDate);
+
+    if (newDate[index].length === (index === 2 ? 4 : 2)) {
+      if (index < 2) {
+        inputRefs.current[index + 1]?.focus();
+      } else {
+        validateDate(newDate);
+      }
+    } else if (newDate[index].length === 0 && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    validateDate(newDate);
   };
 
-  const keyboardWillHide = () => {
-    Animated.timing(buttonPosition, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
+  const validateDate = (date: string[]) => {
+    const [day, month, year] = date;
+    
+    if (day && month && year && year.length === 4) {
+      const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const currentDate = new Date();
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() - 120);
+
+      const isValidDate = !isNaN(parsedDate.getTime()) && 
+                          parsedDate.getFullYear() === parseInt(year) &&
+                          parsedDate.getMonth() === parseInt(month) - 1 &&
+                          parsedDate.getDate() === parseInt(day);
+      
+      if (!isValidDate) {
+        setError('This date of birth doesn\'t seem right.');
+      } else if (parsedDate > currentDate) {
+        setError('Date of birth cannot be in the future.');
+      } else if (parsedDate < maxDate) {
+        setError('Please enter a more recent date of birth.');
+      } else {
+        setError('');
+      }
+    } else {
+      setError('');
+    }
+  };
+
+  const handleNext = () => {
+    if (firstName.trim()) {
+      router.push({
+        pathname: "/genderSelect",
+        params: { name: firstName.trim() }
+      });
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <StatusBar style="light" />
-      <View style={styles.content}>
-        <Text style={styles.header}>NO BACKGROUND CHECKS ARE CONDUCTED</Text>
-        <View style={styles.iconContainer}>
-          <Ionicons name="document-text-outline" size={40} color="white" />
-          <View style={styles.dots}>
-            {[...Array(4)].map((_, i) => (
-              <View key={i} style={styles.dot} />
+    <ScreenWrapper>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <StatusBar style="light" />
+        <View style={styles.content}>
+          <Text style={styles.title}>Hi there! Let's start with an <Text style={styles.intro}>intro.</Text> </Text>
+          <Text style={styles.label}>Your First Name</Text>
+          <TextInput
+            ref={firstNameInputRef}
+            style={styles.input}
+            placeholderTextColor="#999"
+            value={firstName}
+            onChangeText={setFirstName}
+          />
+          <Text style={styles.label}>What's Your Birthday?</Text>
+          <View style={styles.inputContainer}>
+            {[
+              { placeholder: 'DD', style: styles.inputDay },
+              { placeholder: 'MM', style: styles.inputDay },
+              { placeholder: 'YYYY', style: styles.inputYear }
+            ].map((input, index) => (
+              <React.Fragment key={index}>
+                <TextInput
+                  ref={el => inputRefs.current[index] = el}
+                  style={[styles.inputDOB, input.style]}
+                  value={dateOfBirth[index]}
+                  onChangeText={(text) => handleDateChange(text, index)}
+                  placeholder={input.placeholder}
+                  placeholderTextColor="#666"
+                  keyboardType="number-pad"
+                  maxLength={index === 2 ? 4 : 2}
+                />
+                {index < 2 && <Text style={styles.separator}>{'  '}</Text>}
+              </React.Fragment>
             ))}
           </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <Text style={styles.note}>
+            We use this to calculate the age on your profile.
+          </Text>
         </View>
-        <Text style={styles.title}>What's your name?</Text>
-        <TextInput
-          ref={firstNameInputRef}
-          style={[styles.input, { color: 'white' }]} // Set text color to white
-          placeholder="First name (required)"
-          placeholderTextColor="#999"
-          value={firstName}
-          onChangeText={setFirstName}
-        />
-        <TextInput
-          style={[styles.input, { color: 'white' }]} // Set text color to white
-          placeholder="Last name"
-          placeholderTextColor="#999"
-          value={lastName}
-          onChangeText={setLastName}
-        />
-        <Text style={styles.note}>
-          Last name is optional, and only shared with matches.{' '}
-          <Text style={styles.why}>Why?</Text>
-        </Text>
-      </View>
-      <Animated.View
-        style={[
-          styles.buttonContainer,
-          { transform: [{ translateY: buttonPosition }] },
-        ]}
-      >
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/dobScreen" />
-        {/* <TouchableOpacity style={styles.button}>
-          <Ionicons name="arrow-forward" size={24} color="white" />
-        </TouchableOpacity> */}
-      </Animated.View>
-    </KeyboardAvoidingView>
+        
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            { transform: [{ translateY: buttonPosition }] },
+          ]}
+        >
+          <NextButton2 onPress={handleNext} />
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 }
 
@@ -113,64 +173,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+    paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 60,
   },
-  header: {
-    fontSize: 12,
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  dots: {
-    flexDirection: 'row',
-    marginTop: 10,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ddd',
-    marginHorizontal: 4,
-  },
   title: {
-    fontSize: 28,
+    fontSize: hp(4),
+    fontWeight: 'bold',
+    marginBottom: 40,
+    color: '#fff',
+  },
+  intro: {
+    color: '#3A93FA'
+  },
+  label: {
+    fontSize: hp(2.5),
     fontWeight: 'bold',
     marginBottom: 20,
-    color: 'white',
+    color: '#fff',
   },
   input: {
-    borderBottomWidth: 1,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    fontSize: hp(2.5),
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    marginBottom: 40,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  inputDOB: {
+    fontSize: 24,
+    textAlign: 'center',
+    borderBottomWidth: 2,
     borderBottomColor: '#fff',
-    fontSize: 18,
-    paddingVertical: 10,
-    marginBottom: 20,
+    paddingVertical: 5,
+    color: '#fff',
+  },
+  inputDay: {
+    width: 40,
+  },
+  inputYear: {
+    width: 80,
+  },
+  separator: {
+    fontSize: 24,
+    color: '#fff',
+    marginHorizontal: 5,
+  },
+  errorText: {
+    color: '#3A93FA',
+    marginBottom: 10,
   },
   note: {
     fontSize: 14,
     color: '#fff',
-  },
-  why: {
-    color: '#8e44ad',
+    opacity: 0.7
   },
   buttonContainer: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-  },
-  button: {
-    backgroundColor: '#fff',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

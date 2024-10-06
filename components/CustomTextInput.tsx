@@ -25,7 +25,7 @@ const CustomTextInput: React.FC<CustomTextInputProps> = ({
         value={value}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmitEditing}
-        placeholderTextColor="#fff"
+        placeholderTextColor="rgba(255, 255, 255, 0.7)"
         placeholder="Tell Vibby who you are looking for..."
         {...props}
       />
@@ -47,11 +47,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 10,
-    marginVertical: 10,
     width: '100%',
     fontSize: 16,
     fontWeight: 'bold',
-    paddingRight: 40, // Add padding to the right to make space for the icon
+    paddingRight: 40,
   },
   inputLight: {
     backgroundColor: '#000',
@@ -63,7 +62,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     position: 'absolute',
-    right: 10, // Position from the right edge
+    right: 10,
     top: 0,
     bottom: 0,
     justifyContent: 'center',

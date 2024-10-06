@@ -31,13 +31,13 @@ export default function Welcome() {
                             <Button 
                                 title="Getting Started"
                                 buttonStyle={styles.button}
-                                onPress={() => router.push('/signUp')}
+                                onPress={() => router.push('/(auth)/signUp')}
                             />
                             <View style={styles.bottomTextContainer}>
                                 <Text style={styles.loginText}>
                                     Already have an account?
                                 </Text>
-                                <Pressable onPress={() => router.push('/login')}>
+                                <Pressable onPress={() => router.push('/(auth)/login')}>
                                     <Text style={[styles.loginText, styles.loginLink]}>
                                         Login
                                     </Text>

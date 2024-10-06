@@ -1,6 +1,6 @@
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import React, { useRef, useState } from 'react'
-import { wp, hp } from './helpers/common'
+import { wp, hp } from '../helpers/common'
 import { theme } from '@/constants/theme'
 import { useRouter } from 'expo-router'
 import ScreenWrapper from '@/components/ScreenWrapper'
@@ -9,64 +9,80 @@ import BackButtonSmall from '@/components/Buttons/BackButtonSmall'
 import Input from '@/components/Input'
 import { Iconify } from 'react-native-iconify'
 import Button from '@/components/Buttons/Button'
+import { supabase } from '@/lib/supabase'
 
-const SignUp = () => {
+const Login = () => {
     const router = useRouter();
     const emailRef = useRef("");
-    const nameRef = useRef("");
     const passwordRef = useRef("");
     const [loading, setLoading] = useState(false);
     const onSubmit = async ()=> {
         if (!emailRef.current || !passwordRef.current) {
             Alert.alert('Login', 'Fill all fields!');
             return;
-        }        
+        }
+        
+        let email = emailRef.current.trim();
+        let password = emailRef.current.trim();
+        setLoading(true);
+        const {error} = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        setLoading(false);
+
+        console.log('error', error);
+        if (error) {
+            Alert.alert('Login', error.message);
+        }
     } 
   return (
     <ScreenWrapper bg='black'>
-        <StatusBar style='dark' />
+        <StatusBar style='light' />
         <View style={styles.container}>
             <BackButtonSmall router={router} />
 
             {/* welcome */}
             <View>
-                <Text style={styles.welcomeText}>Let's</Text>
-                <Text style={styles.welcomeText}>Get Started</Text>
+                <Text style={styles.welcomeText}>Hey,</Text>
+                <Text style={styles.welcomeText}>Welcome Back</Text>
             </View>
 
             {/* form */}
             <View style={styles.form}>
                 <Text style={{fontSize: hp(1.8), color: theme.colors.text, fontWeight: '700'}}>
-                    Please fill all the details
+                    Please login to continue
                 </Text>
                 <Input 
                 icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
-                placeholder="Enter your name"
-                onChangeText={(value: string) => nameRef.current = value}
-                />
-                <Input 
-                icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
                 placeholder="Enter your email"
-                onChangeText={(value: string)=> emailRef.current = value}
+                onChangeText={(value: string) => emailRef.current = value}
                 />
                 <Input 
                 icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
-                placeholder="Enter your password"
+                placeholder="Enter your pass"
                 secureTextEntry
                 onChangeText={(value: string)=> passwordRef.current = value}
                 />
                 <Text style={styles.forgotPassword}>
                     Forgot Password?
                 </Text>
-                <Button title={'Sign Up'} loading={loading} onPress={onSubmit} />
+                <Button 
+                    title={'Login'} 
+                    loading={loading} 
+                    onPress={onSubmit} 
+                    buttonStyle={styles.buttonStyle} 
+                    textStyle={styles.textStyle} 
+                />
             </View>
             {/* footer */}
             <View style={styles.footer}>
                 <Text style={styles.footerText}>
-                    Already have an account?
+                    Don't have an account?
                 </Text>
-                <Pressable onPress={()=> router.push('/login')}>
-                    <Text style={[styles.footerText, {color: theme.colors.primary, fontWeight: '700'}]}>Login</Text>
+                <Pressable onPress={()=> router.push('/signUp')}>
+                    <Text style={[styles.footerText, {color: theme.colors.primary, fontWeight: '700'}]}>Sign Up</Text>
                 </Pressable>
             </View>
         </View>
@@ -76,7 +92,7 @@ const SignUp = () => {
   )
 }
 
-export default SignUp
+export default Login;
 
 const styles = StyleSheet.create({
     container: {
@@ -108,5 +124,11 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         fontSize: hp(1.7),
 
+    },
+    buttonStyle: {
+        // Define your button style here
+    },
+    textStyle: {
+        // Define your text style here
     }
 })

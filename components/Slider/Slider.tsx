@@ -23,12 +23,12 @@ interface SliderItem {
 }
 
 const data: SliderItem[] = [
-  { id: 1, image: require("../../assets/images/penguin2.png"), name: "Vibby", bio: "ur favorite cat penguin that helps u vibe" },
+  { id: 1, image: require("../../assets/images/penguin2.png"), name: "Vibby", bio: "ur favorite car penguin that helps u vibe hahahaha" },
   { id: 2, image: require("../../assets/images/kanna.jpeg"), name: "Uyen", bio: "i wanna be a princess & im looking for a prince" },
   { id: 3, image: require("../../assets/images/gigachad.png"), name: "Archer", bio: "im a weeb and i love anime" },
   { id: 4, image: require("../../assets/images/gigachad.png"), name: "Devam", bio: "3rd year cs student bruh" },
   { id: 5, image: require("../../assets/images/gigachad.png"), name: "Jason", bio: "handsome Chinese boy" },
-  { id: 6, image: require("../../assets/images/gigachad.png"), name: "Huy", bio: "the creator of this app lmao" },
+  { id: 6, image: require("../../assets/images/gigachad.png"), name: "Huy", bio: "the creator of this app lmao " },
 ];
 
 export default function Slider() {

@@ -98,7 +98,7 @@ export default function ImageSelectionScreen() {
           </View>
           <NextButton 
             router={router as { push: (route: string) => void }} 
-            nextRoute="/highlightBio"
+            nextRoute="/mustVibeFacts"
             // disabled={selectedPhotos.length < 6}
           />
         </View>

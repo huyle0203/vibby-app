@@ -1,5 +1,6 @@
 import React, { useRef, useState, useContext, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated, View } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import Header from '@/components/Header';
 import Lottie from 'lottie-react-native';
 import { ThreadsContext } from '@/context/thread-context';
@@ -14,6 +15,9 @@ export default function TabOneScreen() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isHeaderVisible, setHeaderVisible] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useScrollToTop(scrollViewRef);
 
   useEffect(() => {
     setCurrentUser(createRandomUser());
@@ -42,6 +46,7 @@ export default function TabOneScreen() {
         <Header />
       </Animated.View>
       <Animated.ScrollView
+        ref={scrollViewRef}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         contentContainerStyle={styles.scrollViewContent}
