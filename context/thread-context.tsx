@@ -4,7 +4,7 @@ import { generateThreads } from "@/utils/generate-dommy-data";
 
 export const ThreadsContext = React.createContext<Thread[]>([]);
 
-export const ThreadProvdier = ({
+export const ThreadProvider = ({
   children,
 }: React.PropsWithChildren): JSX.Element => {
   const [threads, setThreads] = React.useState<Thread[]>([]);

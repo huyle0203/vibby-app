@@ -1,12 +1,15 @@
 import { View, Text, Button } from 'react-native';
 import React from 'react'
 import { useRouter } from 'expo-router';
+import Loading from '@/components/Loading';
 
 const index = () => {
     const router = useRouter();
     return (
-        <View>
-            <Text>index</Text>
+        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+            <Loading />
+        {/* <View> */}
+            {/* <Text>index</Text>
             <Text> contains all links</Text>
             <Button title="welcome" onPress={() => router.push({ pathname: '/welcome' })} />
             <Button title="profilePicture" onPress={() => router.push({ pathname: '/profilePicture' })} />
@@ -19,7 +22,7 @@ const index = () => {
             <Button title="main" onPress={() => router.push({ pathname: '/(tabs)/two' })} />
             <Button title="nameInputScreen" onPress={() => router.push({ pathname: '/nameInput' })} />
             <Button title="imageSelection" onPress={() => router.push({ pathname: '/imagesSelection' })} />
-            <Button title="mustVibeFatcs" onPress={() => router.push({ pathname: '/mustVibeFacts' })} />
+            <Button title="mustVibeFatcs" onPress={() => router.push({ pathname: '/mustVibeFacts' })} /> */}
 
         </View>
     )
