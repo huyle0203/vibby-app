@@ -14,16 +14,17 @@ import { supabase } from '@/lib/supabase'
 const SignUp = () => {
     const router = useRouter();
     const emailRef = useRef("");
-    const nameRef = useRef("");
+    //const nameRef = useRef("");
     const passwordRef = useRef("");
     const [loading, setLoading] = useState(false);
+    
     const onSubmit = async ()=> {
         if (!emailRef.current || !passwordRef.current) {
             Alert.alert('Login', 'Fill all fields!');
             return;
         }
         //backend 
-        let name = nameRef.current.trim();
+        // let name = nameRef.current.trim();
         let email = emailRef.current.trim();
         let password = emailRef.current.trim();
 
@@ -32,19 +33,21 @@ const SignUp = () => {
         const {data: {session}, error} = await supabase.auth.signUp({
             email,
             password,
-            options: {
-                data: {
-                    name
-                }
-            }
+            // options: {
+            //     data: {
+            //         name
+            //     }
+            // }
         });
         setLoading(false);
 
         console.log('session: ', session);
         console.log('error: ', error);
+        console.log(' 😎 Sign In Successfully')
         if (error) {
             Alert.alert('Sign Up', error.message);
         }
+        router.push('/nameInput');
     } 
   return (
     <ScreenWrapper bg='black'>
@@ -63,11 +66,11 @@ const SignUp = () => {
                 <Text style={{fontSize: hp(1.8), color: theme.colors.text, fontWeight: '700'}}>
                     Please fill all the details
                 </Text>
-                <Input 
+                {/* <Input 
                 icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
                 placeholder="Enter your name"
                 onChangeText={(value: string) => nameRef.current = value}
-                />
+                /> */}
                 <Input 
                 icon = {<Iconify icon="lucide:mail" size={26} strokeWidth={1.6} /> }
                 placeholder="Enter your email"

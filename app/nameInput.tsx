@@ -8,21 +8,27 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import NextButton2 from '@/components/Buttons/NextButton2';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import { hp, wp } from './helpers/common';
+import { updateUserData } from '@/services/userService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function NameInputScreen() {
   const router = useRouter();
-  const [firstName, setFirstName] = useState('');
-  const firstNameInputRef = useRef<TextInput>(null);
+  const [name, setName] = useState('');
+  const nameInputRef = useRef<TextInput>(null);
   const [dateOfBirth, setDateOfBirth] = useState(['', '', '']);
   const [error, setError] = useState('');
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null]);
   const buttonPosition = useRef(new Animated.Value(0)).current;
+  const { user, setUserData } = useAuth();
+
+
 
   useEffect(() => {
     const keyboardWillShow = (event: any) => {
@@ -48,7 +54,7 @@ export default function NameInputScreen() {
       ? Keyboard.addListener('keyboardWillHide', keyboardWillHide)
       : Keyboard.addListener('keyboardDidHide', keyboardWillHide);
 
-    setTimeout(() => firstNameInputRef.current?.focus(), 100);
+    setTimeout(() => nameInputRef.current?.focus(), 100);
     
     return () => {
       keyboardWillShowListener.remove();
@@ -102,14 +108,32 @@ export default function NameInputScreen() {
     }
   };
 
-  const handleNext = () => {
-    if (firstName.trim()) {
-      router.push({
-        pathname: "/genderSelect",
-        params: { name: firstName.trim() }
-      });
-    }
-  };
+    //auth
+    const handleNext = async () => {
+      if (name.trim() && dateOfBirth.every(part => part.length > 0)) {
+        const dob = `${dateOfBirth[2]}-${dateOfBirth[1]}-${dateOfBirth[0]}`;
+        if (!user?.id) {
+          Alert.alert('Error', 'User ID is missing. Please try logging in again.');
+          return;
+        }
+        try {
+          const result = await updateUserData(user?.id, { name: name.trim(), date_of_birth: dob });
+  
+          if (!result.success) throw new Error(result.msg);
+  
+          setUserData({ name: name.trim(), date_of_birth: dob });
+          router.push({
+            pathname: "/genderSelect",
+            params: { name: name.trim() }
+          });
+          console.log('🧐Name: '+ name, '🧐DOB: '+ dob)
+        } catch (error) {
+          Alert.alert('Error', (error as Error).message);
+        }
+      } else {
+        setError('Please fill in all fields correctly.');
+      }
+    };
 
   return (
     <ScreenWrapper>
@@ -120,13 +144,13 @@ export default function NameInputScreen() {
         <StatusBar style="light" />
         <View style={styles.content}>
           <Text style={styles.title}>Hi there! Let's start with an <Text style={styles.intro}>intro.</Text> </Text>
-          <Text style={styles.label}>Your First Name</Text>
+          <Text style={styles.label}>Your Name</Text>
           <TextInput
-            ref={firstNameInputRef}
+            ref={nameInputRef}
             style={styles.input}
             placeholderTextColor="#999"
-            value={firstName}
-            onChangeText={setFirstName}
+            value={name}
+            onChangeText={setName}
           />
           <Text style={styles.label}>What's Your Birthday?</Text>
           <View style={styles.inputContainer}>

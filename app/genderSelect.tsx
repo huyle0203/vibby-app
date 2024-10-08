@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  Pressable,
-} from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import NextButton from '@/components/Buttons/NextButton';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import { hp, wp } from './helpers/common';
 import BackButton from '@/components/Buttons/BackButton';
+import { useAuth } from '@/context/AuthContext';
+import { updateUserData } from '@/services/userService';
+import { theme } from '@/constants/theme';
 
 type GenderOption = 'Woman' | 'Man' | 'Nonbinary';
 
@@ -19,15 +16,33 @@ export default function GenderSelectScreen() {
   const router = useRouter();
   const { name } = useLocalSearchParams<{ name: string }>();
   const [selectedGender, setSelectedGender] = useState<GenderOption | null>(null);
+  const { user, setUserData } = useAuth();
 
   const genderOptions: GenderOption[] = ['Woman', 'Man', 'Nonbinary'];
 
-  const getTitle = (name: string) => {
-    return (
-      <Text style={styles.title}>
-        <Text style={styles.highlightedName}>{name}</Text> brings cool vibe!
-      </Text>
-    );
+  const getTitle = (name: string) => (
+    <Text style={styles.title}>
+      <Text style={styles.highlightedName}>{name}</Text> brings cool vibe!
+    </Text>
+  );
+  //backend
+  const handleNext = async () => {
+    if (selectedGender && user?.id) {
+      try {
+        const result = await updateUserData(user.id, { gender: selectedGender });
+        if (result.success) {
+          setUserData({ gender: selectedGender });
+          router.push('/profilePicture');
+          console.log('😀 Gender selected:', selectedGender )
+        } else {
+          console.error('Failed to update user data:', result.msg);
+        }
+      } catch (error) {
+        console.error('Error updating user data:', error);
+      }
+    } else {
+      console.error('Gender selection is required');
+    }
   };
 
   return (
@@ -45,6 +60,8 @@ export default function GenderSelectScreen() {
               key={gender}
               style={styles.genderOption}
               onPress={() => setSelectedGender(gender)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selectedGender === gender }}
             >
               <View style={[
                 styles.genderOptionInner,
@@ -67,7 +84,7 @@ export default function GenderSelectScreen() {
           <View style={styles.progressBar}>
             <View style={styles.progress} />
           </View>
-          <NextButton router={router as { push: (route: string) => void }} nextRoute="/profilePicture" />
+          <NextButton onPress={handleNext} disabled={!selectedGender} />
         </View>
       </View>
     </ScreenWrapper>

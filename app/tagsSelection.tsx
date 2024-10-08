@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensions, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensions, TextInput, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import BackButton from '@/components/Buttons/BackButton';
@@ -7,6 +7,8 @@ import NextButton from '@/components/Buttons/NextButton';
 import { useRouter } from 'expo-router';
 import { hp, wp } from './helpers/common';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/context/AuthContext';
+import { updateUserTags } from '@/services/userService';
 
 const { width, height } = Dimensions.get('window')
 
@@ -129,7 +131,8 @@ const categories = [
   },
 ];
 
-const MAX_TAGS = 10;
+const MIN_TAGS = 1;
+const MAX_TAGS = 12;
 const INITIAL_VISIBLE_TAGS = 12;
 
 export default function TagSelectionScreen() {
@@ -137,7 +140,15 @@ export default function TagSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCategories, setFilteredCategories] = useState(categories);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user, setUserData } = useAuth();
+
+  useEffect(() => {
+    if (user?.tags) {
+      setSelectedTags(user.tags);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -160,6 +171,7 @@ export default function TagSelectionScreen() {
       } else if (prev.length < MAX_TAGS) {
         return [...prev, tagName];
       }
+      Alert.alert('Maximum Tags', `You can select up to ${MAX_TAGS} tags.`);
       return prev;
     });
   };
@@ -169,6 +181,8 @@ export default function TagSelectionScreen() {
       if (selectedTags.length < MAX_TAGS) {
         setSelectedTags(prev => [...prev, searchQuery]);
         setSearchQuery('');
+      } else {
+        Alert.alert('Maximum Tags', `You can select up to ${MAX_TAGS} tags.`);
       }
     }
   };
@@ -179,6 +193,34 @@ export default function TagSelectionScreen() {
         ? prev.filter(title => title !== categoryTitle)
         : [...prev, categoryTitle]
     );
+  };
+
+  const handleNext = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User ID is missing. Please try logging in again.');
+      return;
+    }
+
+    if (selectedTags.length < MIN_TAGS) {
+      Alert.alert('Not Enough Tags', `Please select at least ${MIN_TAGS} tag.`);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await updateUserTags(user.id, selectedTags);
+      if (result.success) {
+        setUserData({ tags: selectedTags });
+        router.push('/imagesSelection');
+      } else {
+        throw new Error(result.msg || 'Failed to update tags');
+      }
+    } catch (error) {
+      console.error('Error updating tags:', error);
+      Alert.alert('Error', (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -255,7 +297,7 @@ export default function TagSelectionScreen() {
           <View style={styles.progressBar}>
             <View style={styles.progress} />
           </View>
-          <NextButton router={router as { push: (route: string) => void }} nextRoute="/imagesSelection" />
+          <NextButton onPress={handleNext} disabled={isLoading || selectedTags.length < MIN_TAGS} />
         </View>
       </View>
     </ScreenWrapper>

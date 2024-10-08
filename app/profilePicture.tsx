@@ -1,36 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType, TouchableHighlight } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType, TouchableHighlight, Alert, ActivityIndicator } from 'react-native';
 import { Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import NextButton from '@/components/Buttons/NextButton';
 import BackButton from '@/components/Buttons/BackButton';
 import { hp, wp } from './helpers/common';
+import { useAuth } from '@/context/AuthContext';
+import { updateUserData, updateUserProfilePicture } from '@/services/userService';
+import { theme } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
 type Avatar = {
   source: ImageSourcePropType;
+  value: string;
 };
+
+const avatars: Avatar[] = [
+  { source: require('../assets/images/vibbyBlue.png'), value: 'vibbyBlue' },
+  { source: require('../assets/images/vibbyPink.png'), value: 'vibbyPink' },
+  { source: require('../assets/images/vibbyRed.png'), value: 'vibbyRed' },
+  { source: require('../assets/images/vibbyGreen.png'), value: 'vibbyGreen' },
+  { source: require('../assets/images/vibbyPurple.png'), value: 'vibbyPurple' },
+  { source: require('../assets/images/vibbyBlack.png'), value: 'vibbyBlack' },
+  { source: require('../assets/images/vibbyYellow.png'), value: 'vibbyYellow' },
+  { source: require('../assets/images/vibbyGray.png'), value: 'vibbyGray' },
+];
 
 export default function ProfilePictureScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
-  const [mainProfilePicture, setMainProfilePicture] = useState<ImageSourcePropType>(
-    require('../assets/images/vibbyBlue.png')
-  );
+  const [mainProfilePicture, setMainProfilePicture] = useState<ImageSourcePropType>(avatars[0].source);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  const avatars: Avatar[] = [
-    { source: require('../assets/images/vibbyBlue.png') },
-    { source: require('../assets/images/vibbyPink.png') },
-    { source: require('../assets/images/vibbyRed.png') },
-    { source: require('../assets/images/vibbyGreen.png') },
-    { source: require('../assets/images/vibbyPurple.png') },
-    { source: require('../assets/images/vibbyBlack.png') },
-    { source: require('../assets/images/vibbyYellow.png') },
-    { source: require('../assets/images/vibbyGray.png') },
-  ];
+  const { user, setUserData } = useAuth();
 
   const handleAvatarPress = (index: number): void => {
     setSelectedAvatar(index);
@@ -40,7 +45,7 @@ export default function ProfilePictureScreen() {
   const handleImageUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      alert('Sorry, we need camera roll permissions to make this work!');
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
       return;
     }
 
@@ -57,6 +62,77 @@ export default function ProfilePictureScreen() {
     }
   };
 
+  const handleNext = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User ID is missing. Please try logging in again.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      let profilePictureValue: string;
+
+      if (selectedAvatar !== null) {
+        profilePictureValue = avatars[selectedAvatar].value;
+        console.log('🐧 Selected predefined avatar:', profilePictureValue);
+        
+        const updateResult = await updateUserData(user.id, { profile_picture: profilePictureValue });
+        if (!updateResult.success) {
+          throw new Error(updateResult.msg || 'Failed to update profile picture');
+        }
+      } else if (typeof mainProfilePicture === 'object' && 'uri' in mainProfilePicture && mainProfilePicture.uri) {
+        console.log('📸 Uploading custom image:', mainProfilePicture.uri);
+        
+        const fileInfo = await FileSystem.getInfoAsync(mainProfilePicture.uri);
+        console.log('File info:', fileInfo);
+
+        if (!fileInfo.exists) {
+          throw new Error('File does not exist');
+        }
+
+        const fileExtension = mainProfilePicture.uri.split('.').pop()?.toLowerCase() || 'jpg';
+        
+        let mimeType;
+        switch (fileExtension) {
+          case 'png':
+            mimeType = 'image/png';
+            break;
+          case 'jpg':
+          case 'jpeg':
+            mimeType = 'image/jpeg';
+            break;
+          case 'heic':
+            mimeType = 'image/heic';
+            break;
+          default:
+            mimeType = 'application/octet-stream';
+        }
+
+        const result = await updateUserProfilePicture(user.id, mainProfilePicture.uri, fileExtension, mimeType);
+        if (!result.success || !result.url) {
+          throw new Error(result.msg || 'Failed to upload image');
+        }
+        profilePictureValue = result.url;
+      } else {
+        throw new Error('No profile picture selected');
+      }
+
+      setUserData({ profile_picture: profilePictureValue });
+      console.log('🔄 User data updated with new profile picture:', profilePictureValue);
+
+      const updatedUserData = await updateUserData(user.id, {});
+      console.log('📊 Updated user data:', updatedUserData);
+
+      router.push('/tagsSelection');
+    } catch (error) {
+      console.error('❌ Error in handleNext:', error);
+      Alert.alert('Error', (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <ScreenWrapper>
       <View style={styles.container}>
@@ -69,6 +145,11 @@ export default function ProfilePictureScreen() {
             source={mainProfilePicture}
             style={styles.profilePicture}
           />
+          {isLoading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+          )}
           <TouchableHighlight style={styles.addButton} onPress={handleImageUpload}>
             <Text style={styles.addButtonText}>+</Text>
           </TouchableHighlight>
@@ -97,7 +178,7 @@ export default function ProfilePictureScreen() {
           <View style={styles.progressBar}>
             <View style={styles.progress} />
           </View>
-          <NextButton router={router as { push: (route: string) => void }} nextRoute="/tagsSelection" />
+          <NextButton onPress={handleNext} disabled={isLoading} />
         </View>
       </View>
     </ScreenWrapper>
@@ -135,6 +216,17 @@ const styles = StyleSheet.create({
   profilePicture: {
     width: width * 0.6,
     height: width * 0.6,
+    borderRadius: width * 0.3,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: width * 0.3,
   },
   addButton: {

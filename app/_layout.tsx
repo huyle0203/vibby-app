@@ -76,11 +76,29 @@ function RootLayoutNav() {
     //add [] cuz no infinite loop
   }, []);
 
-  const updateUserData = async (user: { id: string }) => {
-    let res = await getUserData(user?.id);
-    // console.log('got user data: ', res);
-    if (res.success) setUserData(res.data);
+  // const updateUserData = async (user: { id: string }) => {
+  //   let res = await getUserData(user?.id);
+  //   // console.log('got user data: ', res);
+  //   if (res.success) setUserData(res.data);
 
+  // }
+  const updateUserData = async (user: { id: string }) => {
+    if (!user?.id) {
+      console.error('User ID is missing');
+      return;
+    }
+    let res = await getUserData(user?.id);
+    if (res.success && res.data) {
+      setUserData({
+        id: res.data.id,
+        email: res.data.email,
+        name: res.data.name,
+        date_of_birth: res.data.date_of_birth,
+        gender: res.data.gender
+      });
+    } else {
+      console.error('Failed to get user data:', res.msg);
+    }
   }
 
   return (

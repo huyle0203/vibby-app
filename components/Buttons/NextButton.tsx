@@ -5,14 +5,39 @@ import { theme } from '@/constants/theme'
 
 interface NextButtonProps {
   size?: number;
-  router: { push: (route: string) => void };
-  nextRoute: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  router?: { push: (route: string) => void };
+  nextRoute?: string;
 }
 
-export default function NextButton({ size = 30, router, nextRoute }: NextButtonProps) {
+export default function NextButton({ 
+  size = 30, 
+  onPress, 
+  disabled = false, 
+  router, 
+  nextRoute 
+}: NextButtonProps) {
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else if (router && nextRoute) {
+      router.push(nextRoute);
+    }
+  };
+
   return (
-    <Pressable onPress={() => router.push(nextRoute)} style={styles.button}>
-      <Iconify icon="iconamoon:arrow-right-2-bold" strokeWidth={2.6} size={size} color={theme.colors.text} />
+    <Pressable 
+      onPress={handlePress} 
+      style={[styles.button, disabled && styles.disabledButton]}
+      disabled={disabled}
+    >
+      <Iconify 
+        icon="iconamoon:arrow-right-2-bold" 
+        strokeWidth={2.6} 
+        size={size} 
+        color={disabled ? theme.colors.textLight : theme.colors.text} 
+      />
     </Pressable>
   )
 }
@@ -26,6 +51,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#3A93FA'
+  },
+  disabledButton: {
+    backgroundColor: '#A9A9A9',
   }
 }
 )

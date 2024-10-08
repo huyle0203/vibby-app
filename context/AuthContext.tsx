@@ -1,21 +1,22 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
 
-// Define the shape of the user object
 interface User {
-  // Add properties that your user object will have
-  id?: string;
+  id: string;
   email?: string;
-  // Add other user properties as needed
+  name?: string;
+  date_of_birth?: string;
+  gender?: 'Woman' | 'Man' | 'Nonbinary';
+  profile_picture?: string;
+  tags?: string[];
+  images?: string[];
 }
 
-// Define the shape of the context value
 interface AuthContextType {
   user: User | null;
   setAuth: (user: User | null) => void;
   setUserData: (userData: Partial<User>) => void;
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -29,8 +30,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(authUser);
   };
 
+  // const setUserData = (userData: Partial<User>) => {
+  //   setUser(prevUser => ({...prevUser, ...userData}));
+  // };
+
   const setUserData = (userData: Partial<User>) => {
-    setUser(prevUser => ({...prevUser, ...userData}));
+    setUser(prevUser => prevUser ? {...prevUser, ...userData} : userData as User);
   };
 
   return (
