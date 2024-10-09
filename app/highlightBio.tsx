@@ -1,17 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Platform, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { hp, wp } from '@/app/helpers/common';
 import { theme } from '@/constants/theme'
 import BackButton from '@/components/Buttons/BackButton';
-import NextButton from '@/components/Buttons/NextButton';
+import VibbyButton from '@/components/Buttons/VibbyButton';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '@/context/AuthContext';
+import { fetchUserHighlightBio, updateUserHighlightBio } from '@/services/userService';
 
 const HighlightBioScreen: React.FC = () => {
   const router = useRouter();
+  const { user, setUserData } = useAuth();
   const [bio, setBio] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const maxLength = 50;
+
+  useEffect(() => {
+    const loadBio = async () => {
+      if (user) {
+        const result = await fetchUserHighlightBio(user.id);
+        if (result.success && result.highlightBio) {
+          setBio(result.highlightBio);
+        }
+      }
+      setIsLoading(false);
+    };
+    loadBio();
+  }, [user]);
 
   const handleBioChange = (text: string) => {
     if (text.length <= maxLength) {
@@ -22,6 +40,34 @@ const HighlightBioScreen: React.FC = () => {
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
+
+  const handleSave = async () => {
+    if (user) {
+      if (!bio.trim()) {
+        Alert.alert("Error", "Highlight bio cannot be empty. Please enter a bio.");
+        return;
+      }
+      setIsSaving(true);
+      const result = await updateUserHighlightBio(user.id, bio.trim());
+      if (result.success) {
+        setUserData({ ...user, highlightBio: bio.trim() });
+        router.push('/(tabs)/two');
+      } else {
+        Alert.alert("Error", result.msg || "Failed to update highlight bio. Please try again.");
+      }
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3498db" />
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper>
@@ -59,10 +105,6 @@ const HighlightBioScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-
-            <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/two')}>
-              <Text style={styles.buttonText}>Let's Vibe!</Text>
-            </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -71,7 +113,12 @@ const HighlightBioScreen: React.FC = () => {
         <View style={styles.progressBar}>
           <View style={styles.progress} />
         </View>
-        <NextButton router={router as { push: (route: string) => void }} nextRoute="/(tabs)/two" />
+        <VibbyButton 
+          router={router as { push: (route: string) => void }} 
+          nextRoute="/(tabs)/two" 
+          onPress={handleSave}
+          disabled={isSaving}
+        />
       </View>
     </ScreenWrapper>
   );
@@ -132,18 +179,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: hp(1),
   },
-  button: {
-    backgroundColor: '#3A93FA',
-    borderRadius: 10,
-    paddingVertical: hp(2),
-    paddingHorizontal: wp(5),
-    alignSelf: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: hp(2),
-    fontWeight: 'bold',
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -161,6 +196,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#3498db',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
   },
 });
 

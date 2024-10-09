@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Iconify } from 'react-native-iconify';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from 'expo-router';
 
-import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import BigButton from '@/components/BigButton';
 import NewThreadModal from '@/components/NewThreadModal';
-import { createRandomUser } from '@/utils/generate-dommy-data';
+import { useAuth } from '@/context/AuthContext';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -21,7 +18,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const user = createRandomUser();
+  const { user } = useAuth();
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -48,20 +45,6 @@ export default function TabLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color }) => <Iconify icon="akar-icons:home" size={28} color={color} />,
-            // listeners: ({ navigation }) => ({
-            //   tabPress: (e) => {
-            //     if (navigation.isFocused()) {
-            //       // Prevent default behavior
-            //       e.preventDefault();
-            //       // Scroll to top
-            //       navigation.emit({
-            //         type: 'tabPress',
-            //         target: navigation.getState().routes[0].key,
-            //         canPreventDefault: true,
-            //       });
-            //     }
-            //   },
-            // }),
           }}
         />
         <Tabs.Screen
@@ -94,12 +77,14 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      <NewThreadModal
-        isVisible={isModalVisible}
-        onClose={handleCloseModal}
-        userPhoto={user.photo}
-        username={user.username}
-      />
+      {user && (
+        <NewThreadModal
+          isVisible={isModalVisible}
+          onClose={handleCloseModal}
+          userPhoto={user.profile_picture || 'profile_vibbyBlue'}
+          username={user.name || 'User'}
+        />
+      )}
     </>
   );
 }

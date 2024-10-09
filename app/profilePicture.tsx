@@ -20,14 +20,14 @@ type Avatar = {
 };
 
 const avatars: Avatar[] = [
-  { source: require('../assets/images/profile_vibbyBlue.png'), value: 'vibbyBlue' },
-  { source: require('../assets/images/profile_vibbyPink.png'), value: 'vibbyPink' },
-  { source: require('../assets/images/profile_vibbyRed.png'), value: 'vibbyRed' },
-  { source: require('../assets/images/profile_vibbyGreen.png'), value: 'vibbyGreen' },
-  { source: require('../assets/images/profile_vibbyPurple.png'), value: 'vibbyPurple' },
-  { source: require('../assets/images/profile_vibbyBlack.png'), value: 'vibbyBlack' },
-  { source: require('../assets/images/profile_vibbyYellow.png'), value: 'vibbyYellow' },
-  { source: require('../assets/images/profile_vibbyGray.png'), value: 'vibbyGray' },
+  { source: require('../assets/images/profile_vibbyBlue.png'), value: 'profile_vibbyBlue' },
+  { source: require('../assets/images/profile_vibbyPink.png'), value: 'profile_vibbyPink' },
+  { source: require('../assets/images/profile_vibbyRed.png'), value: 'profile_vibbyRed' },
+  { source: require('../assets/images/profile_vibbyGreen.png'), value: 'profile_vibbyGreen' },
+  { source: require('../assets/images/profile_vibbyPurple.png'), value: 'profile_vibbyPurple' },
+  { source: require('../assets/images/profile_vibbyBlack.png'), value: 'profile_vibbyBlack' },
+  { source: require('../assets/images/profile_vibbyYellow.png'), value: 'profile_vibbyYellow' },
+  { source: require('../assets/images/profile_vibbyGray.png'), value: 'profile_vibbyGray' },
 ];
 
 export default function ProfilePictureScreen() {

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useContext, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated, View } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import Header from '@/components/Header';
@@ -8,6 +8,8 @@ import ThreadItem from '@/components/ThreadItem';
 import { createRandomUser, generateThreads } from '@/utils/generate-dommy-data';
 import PostCreationArea from '@/components/PostCreationArea';
 import { Thread, User } from '@/types/threads';
+import { fetchUserProfile, fetchThreads } from '@/services/userService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TabOneScreen() {
   const animationRef = useRef<Lottie>(null);
@@ -16,13 +18,35 @@ export default function TabOneScreen() {
   const [isHeaderVisible, setHeaderVisible] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const { user, setUserData } = useAuth();
 
   useScrollToTop(scrollViewRef);
 
-  useEffect(() => {
-    setCurrentUser(createRandomUser());
+  // useEffect(() => {
+  //   if (user) {
+  //     fetchUserData()
+  //   }
+  //   // setThreads(generateThreads());
+  // }, [user]);
+
+    useEffect(() => {
+    if (user) {
+      fetchUserData()
+    }
     setThreads(generateThreads());
-  }, []);
+  },[]);
+
+  
+
+  const fetchUserData = async () => {
+    if (user) {
+      const result = await fetchUserProfile(user.id);
+      if (result.success && result.data) {
+        console.log('Fetched user data:', result.data);
+        setUserData(result.data);
+      }
+    }
+  };
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -39,6 +63,8 @@ export default function TabOneScreen() {
     animationRef.current?.play();
     setThreads(generateThreads());
   };
+
+  console.log('Current user state:', user);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,8 +91,11 @@ export default function TabOneScreen() {
           autoPlay
           style={styles.lottieAnimation}
         />
-        {currentUser && (
-          <PostCreationArea userPhoto={currentUser.photo} username={currentUser.username} />
+        {user && (
+          <PostCreationArea 
+            userPhoto={user.profile_picture || 'profile_vibbyBlue'}
+            username={user.name || 'User'}
+          />
         )}
         {threads.map((thread) => (
           <ThreadItem key={thread.id} thread={thread} />
@@ -82,7 +111,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   scrollViewContent: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
     paddingTop: Platform.select({ android: 30, ios: 0 }),
   },
   lottieAnimation: {

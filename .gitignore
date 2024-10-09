@@ -31,6 +31,9 @@ yarn-error.*
 # iOS
 ios/
 
+# Android
+android/
+
 # local env files
 .env*.local
 .env

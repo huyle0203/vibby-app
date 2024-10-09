@@ -1,65 +1,55 @@
-import React, { useRef, useState } from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import Rive, { RiveRef, Alignment, Fit } from 'rive-react-native';
+import React from 'react'
+import { Pressable, StyleSheet, Image } from 'react-native'
 
 interface VibbyButtonProps {
-  onPress: () => void;
-  style?: ViewStyle;
+  size?: number;
+  onPress?: () => void;
+  disabled?: boolean;
+  router?: { push: (route: string) => void };
+  nextRoute?: string;
 }
 
-const VibbyButton: React.FC<VibbyButtonProps> = ({ onPress, style }) => {
-  const riveRef = useRef<RiveRef>(null);
-  const [isPressed, setIsPressed] = useState(false);
-
-  const handlePressIn = () => {
-    setIsPressed(true);
-    if (riveRef.current) {
-      riveRef.current.fireState('Egg Radio Button', 'pressed');
+export default function VibbyButton({ 
+  size = 60, 
+  onPress, 
+  disabled = false, 
+  router, 
+  nextRoute 
+}: VibbyButtonProps) {
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else if (router && nextRoute) {
+      router.push(nextRoute);
     }
-  };
-
-  const handlePressOut = () => {
-    setIsPressed(false);
-    if (riveRef.current) {
-      riveRef.current.fireState('Egg Radio Button', 'reset');
-    }
-    onPress();
   };
 
   return (
-    <TouchableOpacity
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.button, style, isPressed && styles.buttonPressed]}
+    <Pressable 
+      onPress={handlePress} 
+      style={[styles.button, disabled && styles.disabledButton]}
+      disabled={disabled}
     >
-      <Rive
-        ref={riveRef}
-        resourceName="egg_radio_button"
-        artboardName="Egg Radio Button"
-        autoplay={false}
-        alignment={Alignment.Center}
-        fit={Fit.Contain}
-        style={styles.animation}
+      <Image 
+        source={require('../../assets/images/profile_vibbyPink.png')}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
       />
-    </TouchableOpacity>
-  );
-};
+    </Pressable>
+  )
+}
 
 const styles = StyleSheet.create({
   button: {
-    width: 40,
-    height: 40,
+    alignSelf: 'flex-start',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'transparent'
   },
-  buttonPressed: {
-    transform: [{ scale: 1.1 }],
-  },
-  animation: {
-    width: '100%',
-    height: '100%',
-  },
-});
-
-export default VibbyButton;
+  disabledButton: {
+    opacity: 0.5,
+  }
+})

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ImageSourcePropType } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NewThreadModal from './NewThreadModal';
 
@@ -8,8 +8,21 @@ interface PostCreationAreaProps {
   username: string;
 }
 
+const profileImages: { [key: string]: ImageSourcePropType } = {
+  profile_vibbyRed: require('../assets/images/profile_vibbyRed.png'),
+  profile_vibbyBlue: require('../assets/images/profile_vibbyBlue.png'),
+  profile_vibbyGreen: require('../assets/images/profile_vibbyGreen.png'),
+  profile_vibbyYellow: require('../assets/images/profile_vibbyYellow.png'),
+  profile_vibbyPink: require('../assets/images/profile_vibbyPink.png'),
+  profile_vibbyPurple: require('../assets/images/profile_vibbyPurple.png'),
+  profile_vibbyBlack: require('../assets/images/profile_vibbyBlack.png'),
+  profile_vibbyGray: require('../assets/images/profile_vibbyGray.png'),
+};
+
 export default function PostCreationArea({ userPhoto, username }: PostCreationAreaProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  console.log('PostCreationArea props:', { userPhoto, username });
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -19,11 +32,21 @@ export default function PostCreationArea({ userPhoto, username }: PostCreationAr
     setIsModalVisible(false);
   };
 
+  // Get the correct image source based on the userPhoto value
+  const getImageSource = (): ImageSourcePropType => {
+    if (userPhoto in profileImages) {
+      return profileImages[userPhoto];
+    }
+    return { uri: userPhoto };
+  };
+
+  const imageSource = getImageSource();
+
   return (
     <>
       <TouchableOpacity style={styles.container} onPress={handleOpenModal}>
         <View style={styles.contentContainer}>
-          <Image source={{ uri: userPhoto }} style={styles.photo} />
+          <Image source={imageSource} style={styles.photo} />
           <View style={styles.rightContent}>
             <Text style={styles.username}>{username}</Text>
             <Text style={styles.placeholder}>What's vibing you?</Text>
@@ -49,7 +72,8 @@ export default function PostCreationArea({ userPhoto, username }: PostCreationAr
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#000',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 0, // Adjusted to match the ThreadItem padding
   },
   contentContainer: {
     flexDirection: 'row',

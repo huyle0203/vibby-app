@@ -10,12 +10,14 @@ interface User {
   tags?: string[];
   images?: string[];
   facts?: string[];
+  highlightBio?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   setAuth: (user: User | null) => void;
   setUserData: (userData: Partial<User>) => void;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,16 +33,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(authUser);
   };
 
-  // const setUserData = (userData: Partial<User>) => {
-  //   setUser(prevUser => ({...prevUser, ...userData}));
-  // };
-
   const setUserData = (userData: Partial<User>) => {
     setUser(prevUser => prevUser ? {...prevUser, ...userData} : userData as User);
   };
 
+  const isAuthenticated = user !== null;
+
   return (
-    <AuthContext.Provider value={{ user, setAuth, setUserData }}>
+    <AuthContext.Provider value={{ user, setAuth, setUserData, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,6 +13,7 @@ import {
   Animated,
   PanResponder,
   Dimensions,
+  ImageSourcePropType,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,7 +25,18 @@ interface NewThreadModalProps {
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const MODAL_HEIGHT = SCREEN_HEIGHT * 0.88; // Modal covers 90% of the screen
+const MODAL_HEIGHT = SCREEN_HEIGHT * 0.88; // Modal covers 88% of the screen
+
+const profileImages: { [key: string]: ImageSourcePropType } = {
+  profile_vibbyRed: require('../assets/images/profile_vibbyRed.png'),
+  profile_vibbyBlue: require('../assets/images/profile_vibbyBlue.png'),
+  profile_vibbyGreen: require('../assets/images/profile_vibbyGreen.png'),
+  profile_vibbyYellow: require('../assets/images/profile_vibbyYellow.png'),
+  profile_vibbyPink: require('../assets/images/profile_vibbyPink.png'),
+  profile_vibbyPurple: require('../assets/images/profile_vibbyPurple.png'),
+  profile_vibbyBlack: require('../assets/images/profile_vibbyBlack.png'),
+  profile_vibbyGray: require('../assets/images/profile_vibbyGray.png'),
+};
 
 export default function NewThreadModal({ isVisible, onClose, userPhoto, username }: NewThreadModalProps) {
   const [postText, setPostText] = useState('');
@@ -88,6 +100,16 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
     closeModal();
   };
 
+  // Get the correct image source based on the userPhoto value
+  const getImageSource = (): ImageSourcePropType => {
+    if (userPhoto in profileImages) {
+      return profileImages[userPhoto];
+    }
+    return { uri: userPhoto };
+  };
+
+  const imageSource = getImageSource();
+
   return (
     <Modal
       animationType="none"
@@ -120,12 +142,12 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
                 </TouchableOpacity>
               </View>
               <View style={styles.contentContainer}>
-                <Image source={{ uri: userPhoto }} style={styles.photo} />
+                <Image source={imageSource} style={styles.photo} />
                 <View style={styles.rightContent}>
                   <Text style={styles.username}>{username}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="What's vibing you?"
+                    placeholder="What's vibing you too?"
                     placeholderTextColor="#666"
                     value={postText}
                     onChangeText={setPostText}
@@ -195,6 +217,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexDirection: 'row',
     padding: 16,
+    paddingHorizontal: 5
   },
   photo: {
     width: 40,

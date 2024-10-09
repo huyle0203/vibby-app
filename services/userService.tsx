@@ -11,6 +11,7 @@ interface UserData {
   tags?: string[];
   images?: string[];
   facts?: string[];
+  highlightBio?: string;
 }
 
 export const getUserData = async (userId: string): Promise<{ success: boolean; msg?: string; data?: UserData }> => {
@@ -47,6 +48,44 @@ export const updateUserData = async (userId: string, updateData: Partial<UserDat
     return { success: false, msg: (error as Error).message };
   }
 }
+
+export const fetchUserProfile = async (userId: string): Promise<{ success: boolean; data?: Partial<UserData>; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, profile_picture, highlight_bio')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+export const fetchThreads = async (): Promise<{ success: boolean; data?: any[]; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('threads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error fetching threads:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
 
 export const updateUserProfilePicture = async (
   userId: string, 
@@ -246,6 +285,53 @@ export const updateUserFacts = async (userId: string, facts: string[]): Promise<
     return { success: true };
   } catch (error) {
     console.error('Error updating user facts:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+export const fetchUserHighlightBio = async (userId: string): Promise<{ success: boolean; highlightBio?: string; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('highlight_bio')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, highlightBio: data?.highlight_bio || '' };
+  } catch (error) {
+    console.error('Error fetching user highlight bio:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+export const  updateUserHighlightBio = async (userId: string, highlightBio: string): Promise<{ success: boolean; msg?: string }> => {
+  try {
+    const trimmedBio = highlightBio.trim();
+    
+    if (!trimmedBio) {
+      throw new Error('Highlight bio cannot be empty');
+    }
+
+    if (trimmedBio.length > 50) {
+      throw new Error('Highlight bio must be 50 characters or less');
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ highlight_bio: trimmedBio })
+      .eq('id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating user highlight bio:', error);
     return { success: false, msg: (error as Error).message };
   }
 };
