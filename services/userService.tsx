@@ -10,6 +10,7 @@ interface UserData {
   profile_picture?: string;
   tags?: string[];
   images?: string[];
+  facts?: string[];
 }
 
 export const getUserData = async (userId: string): Promise<{ success: boolean; msg?: string; data?: UserData }> => {
@@ -203,4 +204,49 @@ export const updateUserTags = async (userId: string, tags: string[]): Promise<{ 
     return { success: false, msg: (error as Error).message };
   }
 }
+
+export const fetchUserFacts = async (userId: string): Promise<{ success: boolean; facts?: string[]; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('facts')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, facts: data?.facts || [] };
+  } catch (error) {
+    console.error('Error fetching user facts:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+export const updateUserFacts = async (userId: string, facts: string[]): Promise<{ success: boolean; msg?: string }> => {
+  try {
+    if (facts.length > 3) {
+      throw new Error('Maximum of 3 facts allowed');
+    }
+
+    if (facts.some(fact => fact.length > 100)) {
+      throw new Error('Each fact must be 100 characters or less');
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ facts })
+      .eq('id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating user facts:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
 

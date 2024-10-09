@@ -2,6 +2,15 @@ import { View, Text, Button } from 'react-native';
 import React from 'react'
 import { useRouter } from 'expo-router';
 import Loading from '@/components/Loading';
+// import Constants from 'expo-constants';
+
+// const isProduction = Constants.manifest && Constants.manifest.releaseChannel !== undefined;
+
+// if (isProduction) {
+//   console.log('Running in production mode');
+// } else {
+//   console.log('Running in development mode');
+// }
 
 const index = () => {
     const router = useRouter();

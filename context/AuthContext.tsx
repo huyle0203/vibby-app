@@ -9,6 +9,7 @@ interface User {
   profile_picture?: string;
   tags?: string[];
   images?: string[];
+  facts?: string[];
 }
 
 interface AuthContextType {
