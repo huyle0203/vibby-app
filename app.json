@@ -14,7 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.vibby2"
+      "bundleIdentifier": "com.anonymous.vibby2",
+      "deploymentTarget": "14.0"
     },
     "android": {
       "adaptiveIcon": {
