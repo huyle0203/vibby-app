@@ -99,7 +99,7 @@ export const fetchThreads = async (): Promise<{
 
 export const updateUserProfilePicture = async (
   userId: string,
-  file: any,
+  imageUri: any,
   fileExtension: string,
   mimeType: string
 ): Promise<{ success: boolean; url?: string; msg?: string }> => {
@@ -115,10 +115,14 @@ export const updateUserProfilePicture = async (
     console.log("Uploading file:", filePath);
 
     // uploaded file to supabase
+    const fileContent = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
     // Upload the file to Supabase storage
     const { error: uploadError, data } = await supabase.storage
       .from("avatars")
-      .upload(filePath, file, {
+      .upload(filePath, Buffer.from(fileContent, "base64"), {
         contentType: mimeType,
         upsert: true,
       });

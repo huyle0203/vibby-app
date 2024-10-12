@@ -72,7 +72,6 @@ export default function ProfilePictureScreen() {
   const [mainProfilePicture, setMainProfilePicture] =
     useState<ImageSourcePropType>(avatars[0].source);
   const [isLoading, setIsLoading] = useState(false);
-  const [file, setFile] = useState<any>();
   const router = useRouter();
   const { user, setUserData } = useAuth();
 
@@ -80,7 +79,6 @@ export default function ProfilePictureScreen() {
     setSelectedAvatar(index);
     setMainProfilePicture(avatars[index].source);
     console.log("This is file when uploading img as object");
-    setFile(avatars[index]);
   };
 
   const handleImageUpload = async () => {
@@ -165,7 +163,7 @@ export default function ProfilePictureScreen() {
         // here file is object which we send to supabase
         const result = await updateUserProfilePicture(
           user.id,
-          file,
+          mainProfilePicture,
           fileExtension,
           mimeType
         );
