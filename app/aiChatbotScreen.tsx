@@ -7,6 +7,7 @@ import CustomTextInput from '@/components/CustomTextInput';
 import { useChatContext } from '@/context/ChatContext';
 import StaticSlider, {User} from '@/components/StaticSlider/StaticSlider'; 
 import UserProfileModal from '@/components/UserProfileModal';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -78,6 +79,7 @@ export default function AIChatbotScreen() {
   };
 
   return (
+    <ScreenWrapper>
     <SafeAreaView style={styles.container}>
       <BackButton router={router} />
       
@@ -119,7 +121,7 @@ export default function AIChatbotScreen() {
         <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inputContainer}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         <SafeAreaView> 
           <CustomTextInput
@@ -142,6 +144,7 @@ export default function AIChatbotScreen() {
         />
       )}
     </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 

@@ -335,4 +335,3 @@ export const  updateUserHighlightBio = async (userId: string, highlightBio: stri
     return { success: false, msg: (error as Error).message };
   }
 };
-

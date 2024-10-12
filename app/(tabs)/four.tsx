@@ -3,9 +3,10 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserProfile } from '@/services/userService';
+import { fetchUserProfile, fetchUserFacts } from '@/services/userService';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import EditProfileModal from '@/components/EditProfileModal';
+import OwnProfileModal from '@/components/OwnProfileModal';
 
 const { width } = Dimensions.get('window');
 
@@ -26,15 +27,25 @@ export default function TabFourScreen() {
   const [translateX] = useState(new Animated.Value(0));
   const { user } = useAuth();
   const [highlightBio, setHighlightBio] = useState<string | null>(null);
+  const [vibeFacts, setVibeFacts] = useState<string[]>([]);
   const [isEditProfileModalVisible, setIsEditProfileModalVisible] = useState(false);
+  const [isOwnProfileModalVisible, setIsOwnProfileModalVisible] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const tabs = ['Threads', 'Replies', 'Repost'];
 
   useEffect(() => {
-    if (user) {
+    if (user && user.id) {
       fetchUserProfile(user.id).then((result) => {
         if (result.success && result.data) {
           setHighlightBio(result.data.highlight_bio || null);
+          setUserProfile(result.data);
+        }
+      });
+
+      fetchUserFacts(user.id).then((result) => {
+        if (result.success && result.facts) {
+          setVibeFacts(result.facts);
         }
       });
     }
@@ -63,6 +74,14 @@ export default function TabFourScreen() {
     setIsEditProfileModalVisible(false);
   };
 
+  const handleProfilePicturePress = () => {
+    setIsOwnProfileModalVisible(true);
+  };
+
+  const handleCloseOwnProfileModal = () => {
+    setIsOwnProfileModalVisible(false);
+  };
+
   if (!user) {
     return (
       <View style={styles.container}>
@@ -84,10 +103,14 @@ export default function TabFourScreen() {
         </View>
 
         <View style={styles.profileInfo}>
-          <Image source={getImageSource()} style={styles.profileImage} />
+          <TouchableOpacity onPress={handleProfilePicturePress}>
+            <Image source={getImageSource()} style={styles.profileImage} />
+          </TouchableOpacity>
           <Text style={styles.name}>{user.name || 'User'}</Text>
-          <Text style={styles.username}>{user.email || '@username'}</Text>
-          <Text style={styles.bio}>{highlightBio || 'No bio  available'}</Text>
+          <Text style={styles.username}>{user.email || 
+
+ '@username'}</Text>
+          <Text style={styles.bio}>{highlightBio || 'No bio available'}</Text>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -131,6 +154,27 @@ export default function TabFourScreen() {
           isVisible={isEditProfileModalVisible}
           onClose={handleCloseEditProfileModal}
         />
+
+        {userProfile && (
+          <OwnProfileModal
+            isVisible={isOwnProfileModalVisible}
+            onClose={handleCloseOwnProfileModal}
+            user={{
+              name: user.name || 'User',
+              username: user.email || '@username',
+              bio: highlightBio || 'No bio available',
+              profilePicture: getImageSource(),
+              lookingFor: userProfile.looking_for || '',
+              musicTaste: userProfile.music_taste || [],
+              likes: userProfile.likes || '',
+              dislikes: userProfile.dislikes || '',
+              hobbies: userProfile.hobbies || [],
+              pets: userProfile.pets || [],
+              images: userProfile.images || [],
+              vibeFacts: vibeFacts,
+            }}
+          />
+        )}
       </View>
     </ScreenWrapper>
   );
