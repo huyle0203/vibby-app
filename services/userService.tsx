@@ -25,10 +25,10 @@ export const getUserData = async (userId: string): Promise<{ success: boolean; m
       return { success: false, msg: error?.message };
     }
     return { success: true, data: data as UserData };
-  } catch(error) {
+  } catch (error) {
     console.error('Error fetching user data:', error);  // Changed to console.error
     return { success: false, msg: (error as Error).message };
-  }     
+  }
 }
 
 export const updateUserData = async (userId: string, updateData: Partial<UserData>) => {
@@ -43,10 +43,21 @@ export const updateUserData = async (userId: string, updateData: Partial<UserDat
       return { success: false, msg: error?.message };
     }
     return { success: true, data };
-  } catch(error) {
+  } catch (error) {
     console.error('Error updating user data:', error);  // Changed to console.error
     return { success: false, msg: (error as Error).message };
   }
+}
+
+function base64ToArrayBuffer(base64: any) {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return bytes.buffer;
 }
 
 export const fetchUserProfile = async (userId: string): Promise<{ success: boolean; data?: Partial<UserData>; msg?: string }> => {
@@ -88,9 +99,9 @@ export const fetchThreads = async (): Promise<{ success: boolean; data?: any[]; 
 
 
 export const updateUserProfilePicture = async (
-  userId: string, 
-  fileUri: string, 
-  fileExtension: string, 
+  userId: string,
+  fileUri: string,
+  fileExtension: string,
   mimeType: string
 ): Promise<{ success: boolean; url?: string; msg?: string }> => {
   try {
@@ -102,15 +113,17 @@ export const updateUserProfilePicture = async (
     const fileName = `${userId}-${Date.now()}.${fileExtension}`;
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Uploading file:', filePath);
+    console.log('Uploading file:', fileName);
 
     // Read the file as a base64 string
     const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+    const file64: any = base64ToArrayBuffer(fileContent);
+
 
     // Upload the file to Supabase storage
     const { error: uploadError, data } = await supabase.storage
       .from('avatars')
-      .upload(filePath, fileContent, {
+      .upload(filePath, file64, {
         contentType: mimeType,
         upsert: true,
       });
@@ -120,12 +133,12 @@ export const updateUserProfilePicture = async (
       throw uploadError;
     }
 
-    console.log('File uploaded successfully');
+    console.log('File uploaded successfully',);
 
     // Get the public URL of the uploaded file
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = await supabase.storage
       .from('avatars')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600);
 
     // if (urlError) {
     //   console.error('Error getting public URL:', urlError);
@@ -136,12 +149,12 @@ export const updateUserProfilePicture = async (
       throw new Error('Failed to get public URL');
     }
 
-    console.log('Public URL:', urlData.publicUrl);
+    console.log('Public URL:', urlData);
 
     // Update the user's profile_picture field in the users table
     const { error: updateError } = await supabase
       .from('users')
-      .update({ profile_picture: urlData.publicUrl })
+      .update({ profile_picture: urlData.signedUrl })
       .eq('id', userId);
 
     if (updateError) {
@@ -151,7 +164,7 @@ export const updateUserProfilePicture = async (
 
     console.log('User profile updated successfully');
 
-    return { success: true, url: urlData.publicUrl };
+    return { success: true, url: urlData.signedUrl };
   } catch (error) {
     console.error('Error updating profile picture:', error);
     return { success: false, msg: (error as Error).message };
@@ -159,9 +172,9 @@ export const updateUserProfilePicture = async (
 }
 
 export const updateUserImages = async (
-  userId: string, 
-  fileUri: string, 
-  fileExtension: string, 
+  userId: string,
+  fileUri: string,
+  fileExtension: string,
   mimeType: string,
   index: number
 ): Promise<{ success: boolean; url?: string; msg?: string }> => {
@@ -178,11 +191,14 @@ export const updateUserImages = async (
 
     // Read the file as a base64 string
     const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+    const file64: any = base64ToArrayBuffer(fileContent);
 
+
+    // p1
     // Upload the file to Supabase storage
     const { error: uploadError, data } = await supabase.storage
       .from('user-images') // Use the new bucket name here
-      .upload(filePath, fileContent, {
+      .upload(filePath, file64, {
         contentType: mimeType,
         upsert: true,
       });
@@ -195,9 +211,9 @@ export const updateUserImages = async (
     console.log('File uploaded successfully');
 
     // Get the public URL of the uploaded file
-    const { data: urlData} = supabase.storage
+    const { data: urlData } = await supabase.storage
       .from('user-images') // Use the new bucket name here
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600);
 
     // if (urlError) {
     //   console.error('Error getting public URL:', urlError);
@@ -208,9 +224,9 @@ export const updateUserImages = async (
       throw new Error('Failed to get public URL');
     }
 
-    console.log('Public URL:', urlData.publicUrl);
+    console.log('Public URL:', urlData.signedUrl);
 
-    return { success: true, url: urlData.publicUrl };
+    return { success: true, url: urlData.signedUrl };
   } catch (error) {
     console.error(`Error updating image ${index + 1}:`, error);
     return { success: false, msg: (error as Error).message };
@@ -308,10 +324,10 @@ export const fetchUserHighlightBio = async (userId: string): Promise<{ success: 
   }
 };
 
-export const  updateUserHighlightBio = async (userId: string, highlightBio: string): Promise<{ success: boolean; msg?: string }> => {
+export const updateUserHighlightBio = async (userId: string, highlightBio: string): Promise<{ success: boolean; msg?: string }> => {
   try {
     const trimmedBio = highlightBio.trim();
-    
+
     if (!trimmedBio) {
       throw new Error('Highlight bio cannot be empty');
     }
