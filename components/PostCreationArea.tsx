@@ -32,13 +32,20 @@ export default function PostCreationArea({ userPhoto, username }: PostCreationAr
     setIsModalVisible(false);
   };
 
-  // Get the correct image source based on the userPhoto value
-  const getImageSource = (): ImageSourcePropType => {
-    if (userPhoto in profileImages) {
-      return profileImages[userPhoto];
+  const getImageSource = async (): Promise<ImageSourcePropType> => {  
+    const { data, error } = await supabase.storage
+      .from('avatars') 
+      .download(userPhoto);
+  
+    if (error) {
+      return { uri: userPhoto }; 
     }
-    return { uri: userPhoto };
-  };
+  
+    console.log(data)
+    const uploadedImg =  URL.createObjectURL(data); 
+
+   return { uri: uploadedImg }
+    };
 
   const imageSource = getImageSource();
 
