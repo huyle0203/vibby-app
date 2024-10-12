@@ -45,20 +45,15 @@ export default function PostCreationArea({
   };
 
   const getImageSource = async (): Promise<any> => {
-    console.log(userPhoto);
-
-    const { data, error } = await supabase.storage
+    const { publicURL, error }: any = supabase.storage
       .from("avatars")
-      .download(userPhoto);
+      .getPublicUrl(userPhoto);
 
     if (error) {
       return setProfilePic({ uri: userPhoto });
     }
 
-    const uploadedImg = URL.createObjectURL(data);
-    console.log(data, uploadedImg);
-
-    setProfilePic({ uri: uploadedImg });
+    setProfilePic({ uri: publicURL });
   };
 
   getImageSource();
