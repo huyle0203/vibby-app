@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 
-
 const api = axios.create({
   baseURL: OPENAI_API_ENDPOINT,
   headers: {

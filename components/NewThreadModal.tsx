@@ -154,6 +154,7 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
                     multiline
                     autoFocus
                   />
+                
                   <View style={styles.iconContainer}>
                     <TouchableOpacity style={styles.iconButton}>
                       <Ionicons name="image-outline" size={24} color="#fff" />
