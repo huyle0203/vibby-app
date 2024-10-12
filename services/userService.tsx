@@ -99,7 +99,7 @@ export const fetchThreads = async (): Promise<{
 
 export const updateUserProfilePicture = async (
   userId: string,
-  fileUri: string,
+  file: any,
   fileExtension: string,
   mimeType: string
 ): Promise<{ success: boolean; url?: string; msg?: string }> => {
@@ -114,15 +114,11 @@ export const updateUserProfilePicture = async (
 
     console.log("Uploading file:", filePath);
 
-    // Read the file as a base64 string
-    const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
+    // uploaded file to supabase
     // Upload the file to Supabase storage
     const { error: uploadError, data } = await supabase.storage
       .from("avatars")
-      .upload(filePath, fileContent, {
+      .upload(filePath, file, {
         contentType: mimeType,
         upsert: true,
       });
@@ -133,22 +129,6 @@ export const updateUserProfilePicture = async (
     }
 
     console.log("File uploaded successfully");
-
-    // Get the public URL of the uploaded file
-    const { data: urlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(filePath);
-
-    // if (urlError) {
-    //   console.error('Error getting public URL:', urlError);
-    //   throw urlError;
-    // }
-
-    if (!urlData) {
-      throw new Error("Failed to get public URL");
-    }
-
-    console.log("Public URL:", urlData.publicUrl);
 
     // Update the user's profile_picture field in the users table
     const { error: updateError } = await supabase
@@ -163,7 +143,7 @@ export const updateUserProfilePicture = async (
 
     console.log("User profile updated successfully");
 
-    return { success: true, url: urlData.publicUrl };
+    return { success: true, url: filePath };
   } catch (error) {
     console.error("Error updating profile picture:", error);
     return { success: false, msg: (error as Error).message };
