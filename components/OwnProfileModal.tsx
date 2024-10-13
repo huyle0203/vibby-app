@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { hp, wp } from '@/app/helpers/common';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -20,7 +19,7 @@ interface OwnProfileModalProps {
     dislikes: string;
     hobbies: string[];
     pets: string[];
-    images: any[];
+    images: string[];
     vibeFacts: string[];
   };
 }
@@ -72,11 +71,28 @@ const OwnProfileModal: React.FC<OwnProfileModalProps> = ({ isVisible, onClose, u
     </View>
   );
 
+  const renderImageGrid = () => (
+    <View style={styles.imageGrid}>
+      <View style={styles.leftColumn}>
+        <Image source={{ uri: user.images[0] }} style={styles.largeImage} />
+        <View style={styles.bottomImagesContainer}>
+          <Image source={{ uri: user.images[1] }} style={styles.smallImage} />
+          <Image source={{ uri: user.images[2] }} style={styles.smallImage} />
+        </View>
+      </View>
+      <View style={styles.rightColumn}>
+        {user.images.slice(3, 6).map((imageUrl, index) => (
+          <Image key={index} source={{ uri: imageUrl }} style={styles.rightImage} />
+        ))}
+      </View>
+    </View>
+  );
+
   return (
     <Animated.View style={[styles.modalContainer, animatedStyle]}>
       <ScrollView style={styles.scrollView}
-      showsHorizontalScrollIndicator={false}
-      showsVerticalScrollIndicator={false}>
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Image source={user.profilePicture} style={styles.profilePicture} />
           <View style={styles.userInfo}>
@@ -104,24 +120,12 @@ const OwnProfileModal: React.FC<OwnProfileModalProps> = ({ isVisible, onClose, u
             <View key={index} style={styles.vibeFactBox}>
               <Text style={styles.vibeFactNumber}>#{index + 1}</Text>
               <Text style={styles.vibeFactText}>{fact}</Text>
+            
             </View>
           ))}
         </View>
         <Text style={styles.sectionTitle}>Things I wanna show you</Text>
-        <View style={styles.imageGrid}>
-          <View style={styles.leftColumn}>
-            <Image source={user.images[0]} style={styles.largeImage} />
-            <View style={styles.bottomImagesContainer}>
-              <Image source={user.images[1]} style={styles.smallImage} />
-              <Image source={user.images[2]} style={styles.smallImage} />
-            </View>
-          </View>
-          <View style={styles.rightColumn}>
-            <Image source={user.images[3]} style={styles.rightImage} />
-            <Image source={user.images[4]} style={styles.rightImage} />
-            <Image source={user.images[5]} style={styles.rightImage} />
-          </View>
-        </View>
+        {renderImageGrid()}
       </ScrollView>
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Iconify icon="lucide:x" size={24} color="#fff" />

@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Iconify } from 'react-native-iconify';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserHighlightBio, fetchUserFacts } from '@/services/userService';
+import { fetchUserHighlightBio, fetchUserFacts, updateUserImages } from '@/services/userService';
 import VibeFactEditModal from './VibeFactEditModal';
 import EditFieldModal from './EditFieldModal';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -25,12 +26,14 @@ const profileImages: { [key: string]: ImageSourcePropType } = {
 interface EditProfileModalProps {
   isVisible: boolean;
   onClose: () => void;
+  userImages: string[];
+  onImagesUpdate: (images: string[]) => void;
 }
 
 const MAX_BIO_LENGTH = 50;
 const MAX_OTHER_LENGTH = 100;
 
-export default function EditProfileModal({ isVisible, onClose }: EditProfileModalProps) {
+export default function EditProfileModal({ isVisible, onClose, userImages, onImagesUpdate }: EditProfileModalProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('Edit');
   const [name, setName] = useState(user?.name || '');
@@ -115,11 +118,39 @@ export default function EditProfileModal({ isVisible, onClose }: EditProfileModa
     </TouchableOpacity>
   );
 
+  const handleImagePick = async (index: number) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0].uri) {
+      const newImages = [...userImages];
+      newImages[index] = result.assets[0].uri;
+      onImagesUpdate(newImages);
+
+      if (user) {
+        const fileExtension = result.assets[0].uri.split('.').pop() || 'jpg';
+        const mimeType = `image/${fileExtension}`;
+        
+        await updateUserImages(user.id, [
+          { uri: result.assets[0].uri, fileExtension, mimeType }
+        ]);
+      }
+    }
+  };
+
   const renderPhotoBox = (index: number) => (
-    <TouchableOpacity style={styles.photoBox} key={index}>
-      <View style={styles.plusIcon}>
-        <Ionicons name="add" size={40} color="#FFFFFF70" />
-      </View>
+    <TouchableOpacity style={styles.photoBox} key={index} onPress={() => handleImagePick(index)}>
+      {userImages[index] ? (
+        <Image source={{ uri: userImages[index] }} style={styles.image} />
+      ) : (
+        <View style={styles.plusIcon}>
+          <Ionicons name="add" size={40} color="#FFFFFF70" />
+        </View>
+      )}
     </TouchableOpacity>
   );
 
@@ -210,20 +241,18 @@ export default function EditProfileModal({ isVisible, onClose }: EditProfileModa
         <View style={styles.photoGrid}>
           {[...Array(6)].map((_, index) => renderPhotoBox(index))}
         </View>
-        <Text style={styles.tapToEditText}>Tap to edit</Text>
       </>
     );
   };
 
   const gesture = Gesture.Pan()
-    .onStart(() => {
-      translateY.value = 0;
-    })
     .onUpdate((event) => {
-      translateY.value = Math.max(0, event.translationY);
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+      }
     })
-    .onEnd((event) => {
-      if (event.velocityY > 500 || event.translationY > SCREEN_HEIGHT * 0.2) {
+    .onEnd(() => {
+      if (translateY.value > SCREEN_HEIGHT * 0.2) {
         translateY.value = withSpring(SCREEN_HEIGHT, {
           damping: 20,
           stiffness: 200,
@@ -248,56 +277,62 @@ export default function EditProfileModal({ isVisible, onClose }: EditProfileModa
               <TouchableOpacity onPress={onClose}>
                 <Text style={styles.headerButton}>Cancel</Text>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>{user?.name || 'User'}</Text>
+              <Text style={styles.headerTitle}>Edit Profile</Text>
               <TouchableOpacity onPress={handleSave}>
-                <Text style={styles.headerButton}>Done</Text>
+                <Text style={styles.headerButton}>Save</Text>
               </TouchableOpacity>
             </View>
-
             <View style={styles.tabContainer}>
-              {['Edit', 'View'].map((tab) => (
-                <TouchableOpacity
-                  key={tab}
-                  style={styles.tab}
-                  onPress={() => handleTabPress(tab)}
-                >
-                  <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-                </TouchableOpacity>
-              ))}
+              <TouchableOpacity
+                style={styles.tab}
+                onPress={() => handleTabPress('Edit')}
+              >
+                <Text style={[styles.tabText, activeTab === 'Edit' && styles.activeTabText]}>
+                  Edit
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.tab}
+                onPress={() => handleTabPress('View')}
+              >
+                <Text style={[styles.tabText, activeTab === 'View' && styles.activeTabText]}>
+                  View
+                </Text>
+              </TouchableOpacity>
               <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
             </View>
 
-            <ScrollView style={styles.scrollView}>
-              {renderContent()}
-            </ScrollView>
+            <ScrollView style={styles.scrollView}>{renderContent()}</ScrollView>
           </SafeAreaView>
         </Animated.View>
       </GestureDetector>
-      {editingFactIndex !== null && (
-        <VibeFactEditModal
-          isVisible={true}
-          onClose={() => setEditingFactIndex(null)}
-          factIndex={editingFactIndex}
-          initialFact={vibeFacts[editingFactIndex]}
-          onSave={handleSaveFact}
-        />
-      )}
-      {editingField && (
-        <EditFieldModal
-          isVisible={true}
-          onClose={() => setEditingField(null)}
-          fieldName={editingField}
-          initialValue={
-            editingField === 'name' ? name :
-            editingField === 'bio' ? bio :
-            editingField === 'lookingFor' ? lookingFor :
-            editingField === 'likes' ? likes :
-            editingField === 'dislikes' ? dislikes : ''
-          }
-          onSave={handleSaveField}
-          maxLength={editingField === 'bio' ? MAX_BIO_LENGTH : MAX_OTHER_LENGTH}
-        />
-      )}
+      <VibeFactEditModal
+        isVisible={editingFactIndex !== null}
+        onClose={() => setEditingFactIndex(null)}
+        factIndex={editingFactIndex !== null ? editingFactIndex : 0}
+        initialFact={editingFactIndex !== null ? vibeFacts[editingFactIndex] : ''}
+        onSave={handleSaveFact}
+      />
+      <EditFieldModal
+        isVisible={editingField !== null}
+        onClose={() => setEditingField(null)}
+        fieldName={editingField || ''}
+        initialValue={
+          editingField === 'name'
+            ? name
+            : editingField === 'bio'
+            ? bio
+            : editingField === 'lookingFor'
+            ? lookingFor
+            : editingField === 'likes'
+            ? likes
+            : editingField === 'dislikes'
+            ? dislikes
+            : ''
+        }
+        onSave={handleSaveField}
+        maxLength={editingField === 'bio' ? MAX_BIO_LENGTH : MAX_OTHER_LENGTH}
+      />
     </GestureHandlerRootView>
   );
 }
@@ -484,5 +519,10 @@ const styles = StyleSheet.create({
   viewContentText: {
     color: '#fff',
     fontSize: 18,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
   },
 });

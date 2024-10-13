@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserProfile, fetchUserFacts } from '@/services/userService';
+import { fetchUserProfile, fetchUserFacts, fetchUserImages } from '@/services/userService';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import EditProfileModal from '@/components/EditProfileModal';
 import OwnProfileModal from '@/components/OwnProfileModal';
@@ -11,14 +11,14 @@ import OwnProfileModal from '@/components/OwnProfileModal';
 const { width } = Dimensions.get('window');
 
 const profileImages: { [key: string]: ImageSourcePropType } = {
-  profile_vibbyRed: require('../../assets/images/profile_vibbyRed.png'),
-  profile_vibbyBlue: require('../../assets/images/profile_vibbyBlue.png'),
-  profile_vibbyGreen: require('../../assets/images/profile_vibbyGreen.png'),
-  profile_vibbyYellow: require('../../assets/images/profile_vibbyYellow.png'),
-  profile_vibbyPink: require('../../assets/images/profile_vibbyPink.png'),
-  profile_vibbyPurple: require('../../assets/images/profile_vibbyPurple.png'),
-  profile_vibbyBlack: require('../../assets/images/profile_vibbyBlack.png'),
-  profile_vibbyGray: require('../../assets/images/profile_vibbyGray.png'),
+  profile_vibbyRed: require('@/assets/images/profile_vibbyRed.png'),
+  profile_vibbyBlue: require('@/assets/images/profile_vibbyBlue.png'),
+  profile_vibbyGreen: require('@/assets/images/profile_vibbyGreen.png'),
+  profile_vibbyYellow: require('@/assets/images/profile_vibbyYellow.png'),
+  profile_vibbyPink: require('@/assets/images/profile_vibbyPink.png'),
+  profile_vibbyPurple: require('@/assets/images/profile_vibbyPurple.png'),
+  profile_vibbyBlack: require('@/assets/images/profile_vibbyBlack.png'),
+  profile_vibbyGray: require('@/assets/images/profile_vibbyGray.png'),
 };
 
 export default function TabFourScreen() {
@@ -31,6 +31,7 @@ export default function TabFourScreen() {
   const [isEditProfileModalVisible, setIsEditProfileModalVisible] = useState(false);
   const [isOwnProfileModalVisible, setIsOwnProfileModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [userImages, setUserImages] = useState<string[]>([]);
 
   const tabs = ['Threads', 'Replies', 'Repost'];
 
@@ -46,6 +47,12 @@ export default function TabFourScreen() {
       fetchUserFacts(user.id).then((result) => {
         if (result.success && result.facts) {
           setVibeFacts(result.facts);
+        }
+      });
+
+      fetchUserImages(user.id).then((result) => {
+        if (result.success && result.urls) {
+          setUserImages(result.urls);
         }
       });
     }
@@ -107,9 +114,7 @@ export default function TabFourScreen() {
             <Image source={getImageSource()} style={styles.profileImage} />
           </TouchableOpacity>
           <Text style={styles.name}>{user.name || 'User'}</Text>
-          <Text style={styles.username}>{user.email || 
-
- '@username'}</Text>
+          <Text style={styles.username}>{user.email || '@username'}</Text>
           <Text style={styles.bio}>{highlightBio || 'No bio available'}</Text>
         </View>
 
@@ -153,6 +158,8 @@ export default function TabFourScreen() {
         <EditProfileModal
           isVisible={isEditProfileModalVisible}
           onClose={handleCloseEditProfileModal}
+          userImages={userImages}
+          onImagesUpdate={setUserImages}
         />
 
         {userProfile && (
@@ -170,7 +177,7 @@ export default function TabFourScreen() {
               dislikes: userProfile.dislikes || '',
               hobbies: userProfile.hobbies || [],
               pets: userProfile.pets || [],
-              images: userProfile.images || [],
+              images: userImages,
               vibeFacts: vibeFacts,
             }}
           />

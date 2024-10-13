@@ -79,6 +79,7 @@ export const fetchUserProfile = async (userId: string): Promise<{ success: boole
   }
 };
 
+//dont need this for now
 export const fetchThreads = async (): Promise<{ success: boolean; data?: any[]; msg?: string }> => {
   try {
     const { data, error } = await supabase
@@ -97,7 +98,7 @@ export const fetchThreads = async (): Promise<{ success: boolean; data?: any[]; 
   }
 };
 
-
+//profile pic 
 export const updateUserProfilePicture = async (
   userId: string,
   fileUri: string,
@@ -171,68 +172,105 @@ export const updateUserProfilePicture = async (
   }
 }
 
+//multiple image
 export const updateUserImages = async (
   userId: string,
-  fileUri: string,
-  fileExtension: string,
-  mimeType: string,
-  index: number
-): Promise<{ success: boolean; url?: string; msg?: string }> => {
+  images: { uri: string; fileExtension: string; mimeType: string }[]
+): Promise<{ success: boolean; urls?: string[]; msg?: string }> => {
   try {
-    console.log(`Updating image ${index + 1} for user:`, userId);
-    console.log('File extension:', fileExtension);
-    console.log('MIME type:', mimeType);
+    console.log('Updating images for user:', userId);
+    const uploadedUrls: string[] = [];
 
-    // Generate a unique file name
-    const fileName = `${userId}-image-${index + 1}-${Date.now()}.${fileExtension}`;
-    const filePath = `${userId}/${fileName}`;
+    for (let i = 0; i < images.length; i++) {
+      const { uri, fileExtension, mimeType } = images[i];
+      console.log(`Processing image ${i + 1}:`);
+      console.log('File extension:', fileExtension);
+      console.log('MIME type:', mimeType);
 
-    console.log('Uploading file:', filePath);
+      // Generate a unique file name
+      const fileName = `${userId}-image-${i + 1}-${Date.now()}.${fileExtension}`;
+      const filePath = `${userId}/${fileName}`;
 
-    // Read the file as a base64 string
-    const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
-    const file64: any = base64ToArrayBuffer(fileContent);
+      console.log('Uploading file:', fileName);
 
+      // Read the file as a base64 string
+      const fileContent = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const file64: any = base64ToArrayBuffer(fileContent);
 
-    // p1
-    // Upload the file to Supabase storage
-    const { error: uploadError, data } = await supabase.storage
-      .from('user-images') // Use the new bucket name here
-      .upload(filePath, file64, {
-        contentType: mimeType,
-        upsert: true,
-      });
+      // Upload the file to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('user-images')
+        .upload(filePath, file64, {
+          contentType: mimeType,
+          upsert: true,
+        });
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw uploadError;
+      if (uploadError) {
+        console.error(`Upload error for image ${i + 1}:`, uploadError);
+        continue;
+      }
+
+      console.log(`File ${i + 1} uploaded successfully`);
+
+      // Get the public URL of the uploaded file
+      const { data: urlData } = await supabase.storage
+        .from('user-images')
+        .createSignedUrl(filePath, 3600);
+
+      if (!urlData) {
+        console.error(`Failed to get public URL for image ${i + 1}`);
+        continue;
+      }
+
+      console.log(`Public URL for image ${i + 1}:`, urlData.signedUrl);
+      uploadedUrls.push(urlData.signedUrl);
     }
 
-    console.log('File uploaded successfully');
+    if (uploadedUrls.length > 0) {
+      // Update the user's images field in the users table
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ images: uploadedUrls })
+        .eq('id', userId);
 
-    // Get the public URL of the uploaded file
-    const { data: urlData } = await supabase.storage
-      .from('user-images') // Use the new bucket name here
-      .createSignedUrl(filePath, 3600);
+      if (updateError) {
+        console.error('Error updating user images:', updateError);
+        throw updateError;
+      }
 
-    // if (urlError) {
-    //   console.error('Error getting public URL:', urlError);
-    //   throw urlError;
-    // }
-
-    if (!urlData) {
-      throw new Error('Failed to get public URL');
+      console.log('User images updated successfully');
+    } else {
+      console.log('No images were successfully uploaded');
     }
 
-    console.log('Public URL:', urlData.signedUrl);
-
-    return { success: true, url: urlData.signedUrl };
+    return { success: true, urls: uploadedUrls };
   } catch (error) {
-    console.error(`Error updating image ${index + 1}:`, error);
+    console.error('Error updating user images:', error);
     return { success: false, msg: (error as Error).message };
   }
-}
+};
 
+
+export const fetchUserImages = async (userId: string): Promise<{ success: boolean; urls?: string[]; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('images')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, urls: data?.images || [] };
+  } catch (error) {
+    console.error('Error fetching user images:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+//tags
 export const updateUserTags = async (userId: string, tags: string[]): Promise<{ success: boolean; msg?: string }> => {
   try {
     if (tags.length < 1 || tags.length > 12) {
@@ -260,6 +298,7 @@ export const updateUserTags = async (userId: string, tags: string[]): Promise<{ 
   }
 }
 
+//tags
 export const fetchUserFacts = async (userId: string): Promise<{ success: boolean; facts?: string[]; msg?: string }> => {
   try {
     const { data, error } = await supabase
@@ -279,6 +318,7 @@ export const fetchUserFacts = async (userId: string): Promise<{ success: boolean
   }
 };
 
+//tags
 export const updateUserFacts = async (userId: string, facts: string[]): Promise<{ success: boolean; msg?: string }> => {
   try {
     if (facts.length > 3) {
@@ -305,6 +345,7 @@ export const updateUserFacts = async (userId: string, facts: string[]): Promise<
   }
 };
 
+//bio
 export const fetchUserHighlightBio = async (userId: string): Promise<{ success: boolean; highlightBio?: string; msg?: string }> => {
   try {
     const { data, error } = await supabase
@@ -324,6 +365,7 @@ export const fetchUserHighlightBio = async (userId: string): Promise<{ success: 
   }
 };
 
+//bio
 export const updateUserHighlightBio = async (userId: string, highlightBio: string): Promise<{ success: boolean; msg?: string }> => {
   try {
     const trimmedBio = highlightBio.trim();

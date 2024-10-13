@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Alert, Act
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import NextButton from '@/components/Buttons/NextButton';
@@ -27,7 +28,7 @@ export default function ImageSelectionScreen() {
   const pickPhotos = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      alert('Sorry, we need camera roll permissions to make this work!');
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
       return;
     }
 
@@ -70,7 +71,7 @@ export default function ImageSelectionScreen() {
   };
 
   const handleNext = async () => {
-    if (!user || !user.id) {
+    if (!user?.id) {
       Alert.alert('Error', 'User ID is missing. Please try logging in again.');
       return;
     }
@@ -83,7 +84,14 @@ export default function ImageSelectionScreen() {
           throw new Error('You can select a maximum of 6 images');
         }
 
-        const uploadedUrls = await Promise.all(selectedPhotos.map(async (photo, index) => {
+        const imagesToUpload = await Promise.all(selectedPhotos.map(async (photo, index) => {
+          const fileInfo = await FileSystem.getInfoAsync(photo.uri);
+          console.log(`File info for image ${index + 1}:`, fileInfo);
+
+          if (!fileInfo.exists) {
+            throw new Error(`File does not exist for image ${index + 1}`);
+          }
+
           const fileExtension = photo.uri.split('.').pop()?.toLowerCase() || 'jpg';
           let mimeType;
           switch (fileExtension) {
@@ -101,18 +109,20 @@ export default function ImageSelectionScreen() {
               mimeType = 'application/octet-stream';
           }
 
-          const result = await updateUserImages(user.id, photo.uri, fileExtension, mimeType, index);
-          if (!result.success || !result.url) {
-            throw new Error(result.msg || `Failed to upload image ${index + 1}`);
-          }
-          return result.url;
-          console.log( '😀Successfully update')
+          return { uri: photo.uri, fileExtension, mimeType };
         }));
 
-        setUserData({ images: uploadedUrls });
-        console.log('🔄 User data updated with new images:', uploadedUrls);
+        console.log('📸 Uploading images:', imagesToUpload);
 
-        const updatedUserData = await updateUserData(user.id, { images: uploadedUrls });
+        const result = await updateUserImages(user.id, imagesToUpload);
+        if (!result.success || !result.urls) {
+          throw new Error(result.msg || 'Failed to upload images');
+        }
+
+        setUserData({ images: result.urls });
+        console.log('🔄 User data updated with new images:', result.urls);
+
+        const updatedUserData = await updateUserData(user.id, { images: result.urls });
         console.log('📊 Updated user data:', updatedUserData);
       } else {
         console.log('No images selected. Proceeding to next screen.');
