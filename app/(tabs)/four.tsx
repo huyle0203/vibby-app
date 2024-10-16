@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserProfile, fetchUserFacts, fetchUserImages } from '@/services/userService';
+import { fetchUserProfile, fetchUserFacts, fetchUserImages, fetchUserTags } from '@/services/userService';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import EditProfileModal from '@/components/EditProfileModal';
 import OwnProfileModal from '@/components/OwnProfileModal';
@@ -32,6 +32,7 @@ export default function TabFourScreen() {
   const [isOwnProfileModalVisible, setIsOwnProfileModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userImages, setUserImages] = useState<string[]>([]);
+  const [userTags, setUserTags] = useState<string[]>([]);
 
   const tabs = ['Threads', 'Replies', 'Repost'];
 
@@ -53,6 +54,12 @@ export default function TabFourScreen() {
       fetchUserImages(user.id).then((result) => {
         if (result.success && result.urls) {
           setUserImages(result.urls);
+        }
+      });
+
+      fetchUserTags(user.id).then((result) => {
+        if (result.success && result.tags) {
+          setUserTags(result.tags);
         }
       });
     }
@@ -172,11 +179,9 @@ export default function TabFourScreen() {
               bio: highlightBio || 'No bio available',
               profilePicture: getImageSource(),
               lookingFor: userProfile.looking_for || '',
-              musicTaste: userProfile.music_taste || [],
               likes: userProfile.likes || '',
               dislikes: userProfile.dislikes || '',
-              hobbies: userProfile.hobbies || [],
-              pets: userProfile.pets || [],
+              tags: userTags,
               images: userImages,
               vibeFacts: vibeFacts,
             }}

@@ -4,13 +4,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { Iconify } from 'react-native-iconify';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserHighlightBio, fetchUserFacts, updateUserImages } from '@/services/userService';
+import { fetchUserHighlightBio, fetchUserFacts, updateUserImages, updateUserData, fetchUserTags } from '@/services/userService';
 import VibeFactEditModal from './VibeFactEditModal';
 import EditFieldModal from './EditFieldModal';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+interface UserData {
+  name?: string;
+  highlight_bio?: string;
+  looking_for?: string;
+  likes?: string;
+  dislikes?: string;
+  facts?: string[];
+  images?: string[];
+  tags?: string[];
+}
 
 const profileImages: { [key: string]: ImageSourcePropType } = {
   profile_vibbyRed: require('@/assets/images/profile_vibbyRed.png'),
@@ -35,6 +48,8 @@ const MAX_OTHER_LENGTH = 100;
 
 export default function EditProfileModal({ isVisible, onClose, userImages, onImagesUpdate }: EditProfileModalProps) {
   const { user } = useAuth();
+  const router = useRouter();
+  const { updatedTags } = useLocalSearchParams<{ updatedTags: string }>();
   const [activeTab, setActiveTab] = useState('Edit');
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState('');
@@ -44,6 +59,8 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
   const [vibeFacts, setVibeFacts] = useState(['', '', '']);
   const [editingFactIndex, setEditingFactIndex] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [changedFields, setChangedFields] = useState<Partial<UserData>>({});
+  const [userTags, setUserTags] = useState<string[]>([]);
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const translateX = useSharedValue(0);
@@ -64,21 +81,39 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
     }
   }, [isVisible]);
 
-  useEffect(() => {
+  const fetchUserData = useCallback(async () => {
     if (user && user.id) {
-      fetchUserHighlightBio(user.id).then((result) => {
-        if (result.success && result.highlightBio) {
-          setBio(result.highlightBio.slice(0, MAX_BIO_LENGTH));
-        }
-      });
+      const bioResult = await fetchUserHighlightBio(user.id);
+      if (bioResult.success && bioResult.highlightBio) {
+        setBio(bioResult.highlightBio.slice(0, MAX_BIO_LENGTH));
+      }
 
-      fetchUserFacts(user.id).then((result) => {
-        if (result.success && result.facts) {
-          setVibeFacts(result.facts.map(fact => fact.slice(0, MAX_OTHER_LENGTH)));
-        }
-      });
+      const factsResult = await fetchUserFacts(user.id);
+      if (factsResult.success && factsResult.facts) {
+        setVibeFacts(factsResult.facts.map(fact => fact.slice(0, MAX_OTHER_LENGTH)));
+      }
+
+      const tagsResult = await fetchUserTags(user.id);
+      if (tagsResult.success && tagsResult.tags) {
+        setUserTags(tagsResult.tags);
+      }
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (updatedTags) {
+        const parsedTags = JSON.parse(updatedTags);
+        setUserTags(parsedTags);
+        setChangedFields(prev => ({ ...prev, tags: parsedTags }));
+      }
+      fetchUserData(); // Refetch user data when the screen comes into focus
+    }, [updatedTags, fetchUserData])
+  );
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -100,9 +135,37 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
     });
   }, []);
 
-  const handleSave = () => {
-    // Implement save logic here
-    onClose();
+  const handleSave = async () => {
+    try {
+      if (user && user.id) {
+        const result = await updateUserData(user.id, changedFields);
+        if (!result.success) {
+          throw new Error(result.msg);
+        }
+
+        if (changedFields.images) {
+          await updateUserImages(user.id, changedFields.images.map(uri => ({
+            uri,
+            fileExtension: uri.split('.').pop() || 'jpg',
+            mimeType: `image/${uri.split('.').pop() || 'jpeg'}`
+          })));
+        }
+
+        setChangedFields({});
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setChangedFields(prev => ({ ...prev, [fieldName]: value }));
+  };
+
+  const handleImageChange = (newImages: string[]) => {
+    setChangedFields(prev => ({ ...prev, images: newImages }));
+    onImagesUpdate(newImages);
   };
 
   const renderTextInput = (value: string, onChangeText: (text: string) => void, placeholder: string, fieldName: string, maxLength: number) => (
@@ -129,7 +192,7 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
     if (!result.canceled && result.assets[0].uri) {
       const newImages = [...userImages];
       newImages[index] = result.assets[0].uri;
-      onImagesUpdate(newImages);
+      handleImageChange(newImages);
 
       if (user) {
         const fileExtension = result.assets[0].uri.split('.').pop() || 'jpg';
@@ -169,6 +232,7 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
     const newFacts = [...vibeFacts];
     newFacts[index] = newFact.slice(0, MAX_OTHER_LENGTH);
     setVibeFacts(newFacts);
+    setChangedFields(prev => ({ ...prev, facts: newFacts }));
     setEditingFactIndex(null);
   };
 
@@ -177,10 +241,10 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
       case 'name':
         setName(value);
         break;
-      case 'bio':
+      case 'highlight_bio':
         setBio(value.slice(0, MAX_BIO_LENGTH));
         break;
-      case 'lookingFor':
+      case 'looking_for':
         setLookingFor(value.slice(0, MAX_OTHER_LENGTH));
         break;
       case 'likes':
@@ -190,7 +254,15 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
         setDislikes(value.slice(0, MAX_OTHER_LENGTH));
         break;
     }
+    handleFieldChange(fieldName as keyof UserData, value);
     setEditingField(null);
+  };
+
+  const handleTagsPress = () => {
+    router.push({
+      pathname: '/tagEditScreen',
+      params: { selectedTags: JSON.stringify(userTags) }
+    });
   };
 
   const renderContent = () => {
@@ -213,10 +285,28 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
         </View>
 
         {renderTextInput(name, setName, 'Name', 'name', MAX_OTHER_LENGTH)}
-        {renderTextInput(bio, setBio, 'Bio', 'bio', MAX_BIO_LENGTH)}
+        {renderTextInput(bio, setBio, 'Bio', 'highlight_bio', MAX_BIO_LENGTH)}
+
+        <Text style={styles.sectionTitle}>My Tags</Text>
+        <View style={styles.tagsContainer}>
+          {userTags.length > 0 ? (
+            <View style={styles.tagBubblesContainer}>
+              {userTags.map((tag, index) => (
+                <View key={index} style={styles.tagBubble}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.placeholderText}>Add tags</Text>
+          )}
+          <TouchableOpacity onPress={handleTagsPress}>
+            <Ionicons name="chevron-forward" size={24} color="#3A93FA" />
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.sectionTitle}>Looking for...</Text>
-        {renderTextInput(lookingFor, setLookingFor, 'What are you looking for?', 'lookingFor', MAX_OTHER_LENGTH)}
+        {renderTextInput(lookingFor, setLookingFor, 'What are you looking for?', 'looking_for', MAX_OTHER_LENGTH)}
 
         <Text style={styles.sectionTitle}>What I Like</Text>
         {renderTextInput(likes, setLikes, 'What do you like?', 'likes', MAX_OTHER_LENGTH)}
@@ -256,7 +346,7 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
         translateY.value = withSpring(SCREEN_HEIGHT, {
           damping: 20,
           stiffness: 200,
-          mass: 0.5,
+          mass:  0.5,
         });
         onClose();
       } else {
@@ -287,7 +377,7 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
                 style={styles.tab}
                 onPress={() => handleTabPress('Edit')}
               >
-                <Text style={[styles.tabText, activeTab === 'Edit' && styles.activeTabText]}>
+                <Text  style={[styles.tabText, activeTab === 'Edit' && styles.activeTabText]}>
                   Edit
                 </Text>
               </TouchableOpacity>
@@ -301,7 +391,6 @@ export default function EditProfileModal({ isVisible, onClose, userImages, onIma
               </TouchableOpacity>
               <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
             </View>
-
             <ScrollView style={styles.scrollView}>{renderContent()}</ScrollView>
           </SafeAreaView>
         </Animated.View>
@@ -403,7 +492,7 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 100,
     height: 100,
-    borderRadius:  50,
+    borderRadius: 50,
     opacity: 0.5,
   },
   cameraIconContainer: {
@@ -524,5 +613,34 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 8,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#3A93FA',
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 12,
+    minHeight: 50,
+  },
+  tagBubblesContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tagBubble: {
+    backgroundColor: '#3A93FA',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });

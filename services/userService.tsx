@@ -12,6 +12,9 @@ interface UserData {
   images?: string[];
   facts?: string[];
   highlightBio?: string;
+  looking_for?: string;
+  likes?: string;
+  dislikes?: string;
 }
 
 export const getUserData = async (userId: string): Promise<{ success: boolean; msg?: string; data?: UserData }> => {
@@ -64,7 +67,7 @@ export const fetchUserProfile = async (userId: string): Promise<{ success: boole
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('name, profile_picture, highlight_bio')
+      .select('name, profile_picture, highlight_bio, looking_for, likes, dislikes')
       .eq('id', userId)
       .single();
 
@@ -298,7 +301,26 @@ export const updateUserTags = async (userId: string, tags: string[]): Promise<{ 
   }
 }
 
-//tags
+export const fetchUserTags = async (userId: string): Promise<{ success: boolean; tags?: string[]; msg?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('tags')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, tags: data?.tags || [] };
+  } catch (error) {
+    console.error('Error fetching user tags:', error);
+    return { success: false, msg: (error as Error).message };
+  }
+};
+
+//facts
 export const fetchUserFacts = async (userId: string): Promise<{ success: boolean; facts?: string[]; msg?: string }> => {
   try {
     const { data, error } = await supabase
@@ -318,7 +340,7 @@ export const fetchUserFacts = async (userId: string): Promise<{ success: boolean
   }
 };
 
-//tags
+//facts
 export const updateUserFacts = async (userId: string, facts: string[]): Promise<{ success: boolean; msg?: string }> => {
   try {
     if (facts.length > 3) {
