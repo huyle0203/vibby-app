@@ -5,6 +5,7 @@ import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ThreadProvider } from '@/context/thread-context';
@@ -48,9 +49,11 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -59,29 +62,21 @@ function RootLayoutNav() {
   const { setAuth, setUserData } = useAuth();
   const router = useRouter();
 
-  useEffect(()=>{
+  useEffect(() => {
     supabase.auth.onAuthStateChange((_event, session) => {
-      //setSession(session)
-        console.log('session user:', session?.user?.id);
+      console.log('session user:', session?.user?.id);
 
-        if (session) {
-           setAuth(session?.user);
-           updateUserData(session?.user);
-           router.replace('/(tabs)/two');
-        } else {
-           setAuth(null);
-           router.replace('/welcome');
-        }
+      if (session) {
+        setAuth(session?.user);
+        updateUserData(session?.user);
+        router.replace('/(tabs)/two');
+      } else {
+        setAuth(null);
+        router.replace('/welcome');
+      }
     })
-    //add [] cuz no infinite loop
   }, []);
 
-  // const updateUserData = async (user: { id: string }) => {
-  //   let res = await getUserData(user?.id);
-  //   // console.log('got user data: ', res);
-  //   if (res.success) setUserData(res.data);
-
-  // }
   const updateUserData = async (user: { id: string }) => {
     if (!user?.id) {
       console.error('User ID is missing');

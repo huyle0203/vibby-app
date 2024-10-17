@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, ImageSourcePropType } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, ImageSourcePropType, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { fetchUserProfile, fetchUserFacts, fetchUserImages, fetchUserTags } from '@/services/userService';
+import { fetchUserPosts } from '@/services/postService';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import EditProfileModal from '@/components/EditProfileModal';
 import OwnProfileModal from '@/components/OwnProfileModal';
+import PostItem from '@/components/PostItem';
 
 const { width } = Dimensions.get('window');
 
@@ -33,37 +35,53 @@ export default function TabFourScreen() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userImages, setUserImages] = useState<string[]>([]);
   const [userTags, setUserTags] = useState<string[]>([]);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const tabs = ['Threads', 'Replies', 'Repost'];
 
-  useEffect(() => {
+  const fetchUserData = useCallback(async () => {
     if (user && user.id) {
-      fetchUserProfile(user.id).then((result) => {
-        if (result.success && result.data) {
-          setHighlightBio(result.data.highlight_bio || null);
-          setUserProfile(result.data);
-        }
-      });
+      const [profileResult, factsResult, imagesResult, tagsResult, postsResult] = await Promise.all([
+        fetchUserProfile(user.id),
+        fetchUserFacts(user.id),
+        fetchUserImages(user.id),
+        fetchUserTags(user.id),
+        fetchUserPosts(user.id)
+      ]);
 
-      fetchUserFacts(user.id).then((result) => {
-        if (result.success && result.facts) {
-          setVibeFacts(result.facts);
-        }
-      });
+      if (profileResult.success && profileResult.data) {
+        setHighlightBio(profileResult.data.highlight_bio || null);
+        setUserProfile(profileResult.data);
+      }
 
-      fetchUserImages(user.id).then((result) => {
-        if (result.success && result.urls) {
-          setUserImages(result.urls);
-        }
-      });
+      if (factsResult.success && factsResult.facts) {
+        setVibeFacts(factsResult.facts);
+      }
 
-      fetchUserTags(user.id).then((result) => {
-        if (result.success && result.tags) {
-          setUserTags(result.tags);
-        }
-      });
+      if (imagesResult.success && imagesResult.urls) {
+        setUserImages(imagesResult.urls);
+      }
+
+      if (tagsResult.success && tagsResult.tags) {
+        setUserTags(tagsResult.tags);
+      }
+
+      if (postsResult.success && postsResult.posts) {
+        setUserPosts(postsResult.posts);
+      }
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUserData();
+    setRefreshing(false);
+  }, [fetchUserData]);
 
   const handleTabPress = (index: number) => {
     setActiveTab(index);
@@ -107,60 +125,85 @@ export default function TabFourScreen() {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="menu" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.profileInfo}>
-          <TouchableOpacity onPress={handleProfilePicturePress}>
-            <Image source={getImageSource()} style={styles.profileImage} />
-          </TouchableOpacity>
-          <Text style={styles.name}>{user.name || 'User'}</Text>
-          <Text style={styles.username}>{user.email || '@username'}</Text>
-          <Text style={styles.bio}>{highlightBio || 'No bio available'}</Text>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleEditProfilePress}>
-            <Text style={styles.buttonText}>Edit profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Share profile</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabContainer}>
-          {tabs.map((tab, index) => (
-            <TouchableOpacity
-              key={tab}
-              style={styles.tab}
-              onPress={() => handleTabPress(index)}
-            >
-              <Text style={[styles.tabText, activeTab === index && styles.activeTabText]}>
-                {tab}
-              </Text>
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#fff"
+            />
+          }
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-          ))}
-          <Animated.View
-            style={[
-              styles.tabIndicator,
-              {
-                transform: [{ translateX }],
-              },
-            ]}
-          />
-        </View>
+            <TouchableOpacity>
+              <Ionicons name="menu" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.content}>
-          {activeTab === 0 && <Text style={styles.contentText}>Threads Content</Text>}
-          {activeTab === 1 && <Text style={styles.contentText}>Replies Content</Text>}
-          {activeTab === 2 && <Text style={styles.contentText}>Repost Content</Text>}
-        </View>
+          <View style={styles.profileInfo}>
+            <TouchableOpacity onPress={handleProfilePicturePress}>
+              <Image source={getImageSource()} style={styles.profileImage} />
+            </TouchableOpacity>
+            <Text style={styles.name}>{user.name || 'User'}</Text>
+            <Text style={styles.username}>{user.email || '@username'}</Text>
+            <Text style={styles.bio}>{highlightBio || 'No bio available'}</Text>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={handleEditProfilePress}>
+              <Text style={styles.buttonText}>Edit profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>Share profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.tabContainer}>
+            {tabs.map((tab, index) => (
+              <TouchableOpacity
+                key={tab}
+                style={styles.tab}
+                onPress={() => handleTabPress(index)}
+              >
+                <Text style={[styles.tabText, activeTab === index && styles.activeTabText]}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <Animated.View
+              style={[
+                styles.tabIndicator,
+                {
+                  transform: [{ translateX }],
+                },
+              ]}
+            />
+          </View>
+
+          <View style={styles.content}>
+            {activeTab === 0 && (
+              <View>
+                {userPosts.map((post, index) => (
+                  <PostItem
+                    key={index}
+                    username={user.name || 'User'}
+                    content={post.content}
+                    createdAt={post.created_at}
+                    vibeParameter={post.vibe_parameter || 0}
+                    commentCount={post.comment_count || 0}
+                    userPhoto={user.profile_picture || 'profile_vibbyBlue'}
+                    images={post.images}
+                  />
+                ))}
+              </View>
+            )}
+            {activeTab === 1 && <Text style={styles.contentText}>Replies Content</Text>}
+            {activeTab === 2 && <Text style={styles.contentText}>Repost Content</Text>}
+          </View>
+        </ScrollView>
 
         <EditProfileModal
           isVisible={isEditProfileModalVisible}
@@ -276,8 +319,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   contentText: {
     color: 'white',

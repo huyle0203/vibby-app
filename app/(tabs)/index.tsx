@@ -1,42 +1,49 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Platform, RefreshControl, Animated, View, Text, Image, TouchableOpacity } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import Lottie from 'lottie-react-native';
-import { ThreadsContext } from '@/context/thread-context';
-import ThreadItem from '@/components/ThreadItem';
-import { createRandomUser, generateThreads } from '@/utils/generate-dommy-data';
+import PostItemFriends from '@/components/PostItemFriends';
 import PostCreationArea from '@/components/PostCreationArea';
-import { Thread, User } from '@/types/threads';
-import { fetchUserProfile, fetchThreads } from '@/services/userService';
+import { fetchUserProfile } from '@/services/userService';
+import { fetchFriendsPosts } from '@/services/postService';
 import { useAuth } from '@/context/AuthContext';
+
+interface Post {
+  id: string;
+  user_id: string;
+  content: string;
+  images: string[];
+  created_at: string;
+  updated_at: string;
+  average_vibe: number | null;
+  vibe_count: number;
+  user: {
+    name: string;
+    profile_picture: string;
+  };
+}
 
 export default function TabOneScreen() {
   const animationRef = useRef<Lottie>(null);
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [isHeaderVisible, setHeaderVisible] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const { user, setUserData } = useAuth();
+  const router = useRouter();
 
   useScrollToTop(scrollViewRef);
 
-  // useEffect(() => {
-  //   if (user) {
-  //     fetchUserData()
-  //   }
-  //   // setThreads(generateThreads());
-  // }, [user]);
-
-    useEffect(() => {
+  useEffect(() => {
+    console.log('Component mounted, user:', user);
     if (user) {
-      fetchUserData()
+      fetchUserData();
+      fetchPosts();
     }
-    setThreads(generateThreads());
-  },[]);
-
-  
+  }, []);
 
   const fetchUserData = async () => {
     if (user) {
@@ -44,6 +51,24 @@ export default function TabOneScreen() {
       if (result.success && result.data) {
         console.log('Fetched user data:', result.data);
         setUserData(result.data);
+      } else {
+        console.error('Failed to fetch user data:', result.error);
+      }
+    }
+  };
+
+  const fetchPosts = async () => {
+    if (user) {
+      console.log('Fetching posts for user:', user.id);
+      const friendsResult = await fetchFriendsPosts(user.id);
+
+      console.log('Friends posts result:', friendsResult);
+
+      if (friendsResult.success && friendsResult.posts) {
+        setPosts(friendsResult.posts);
+      } else {
+        console.error('Failed to fetch friends posts:', friendsResult.msg);
+        setPosts([]);
       }
     }
   };
@@ -59,9 +84,15 @@ export default function TabOneScreen() {
     extrapolate: 'clamp',
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    setRefreshing(true);
     animationRef.current?.play();
-    setThreads(generateThreads());
+    await fetchPosts();
+    setRefreshing(false);
+  };
+
+  const handleFindFriends = () => {
+    router.push({ pathname: '/(tabs)/two' });
   };
 
   console.log('Current user state:', user);
@@ -78,7 +109,7 @@ export default function TabOneScreen() {
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
           <RefreshControl 
-            refreshing={false} 
+            refreshing={refreshing} 
             onRefresh={handleRefresh}
             tintColor={"transparent"}
           />
@@ -97,9 +128,34 @@ export default function TabOneScreen() {
             username={user.name || 'User'}
           />
         )}
-        {threads.map((thread) => (
-          <ThreadItem key={thread.id} thread={thread} />
-        ))}
+        {posts.length > 0 ? (
+          posts.map((post) => (
+            <View key={post.id}>
+              <Text style={styles.debugText}>Post ID: {post.id}</Text>
+              <Text style={styles.debugText}>User ID: {post.user_id}</Text>
+              <PostItemFriends
+                username={post.user.name}
+                content={post.content}
+                createdAt={post.created_at}
+                vibeParameter={post.average_vibe || 0}
+                commentCount={0}
+                userPhoto={post.user.profile_picture || 'profile_vibbyBlue'}
+              />
+            </View>
+          ))
+        ) : (
+          <View style={styles.noPostsContainer}>
+            <Image
+              source={require('../../assets/images/vibbyFind.png')}
+              style={styles.noPostsImage}
+            />
+            <Text style={styles.noPostsText}>Hey, it seems like you got no biches yet.</Text>
+            <Text style={styles.noPostsText}>Time to find some, will ya?</Text>
+            <TouchableOpacity style={styles.findFriendsButton} onPress={handleFindFriends}>
+              <Text style={styles.findFriendsButtonText}>Let's find friends</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </Animated.ScrollView>
     </SafeAreaView>
   );
@@ -118,5 +174,39 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     alignSelf: "center",
+  },
+  debugText: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  noPostsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  noPostsImage: {
+    width: 150,
+    height: 150,
+    marginBottom: 10,
+  },
+  noPostsText: {
+    color: '#fff',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  findFriendsButton: {
+    backgroundColor: '#3A93FA',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginTop: 20,
+  },
+  findFriendsButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

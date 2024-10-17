@@ -10,12 +10,18 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  PanResponder,
   Dimensions,
   ImageSourcePropType,
+  Alert,
+  FlatList,
+  ScrollView,
+  Animated,
+  KeyboardAvoidingViewProps,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { createPost, uploadImage } from '../services/postService';
+import { useAuth } from '../context/AuthContext';
 
 interface NewThreadModalProps {
   isVisible: boolean;
@@ -25,7 +31,10 @@ interface NewThreadModalProps {
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const MODAL_HEIGHT = SCREEN_HEIGHT * 0.88; // Modal covers 88% of the screen
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MODAL_HEIGHT = SCREEN_HEIGHT * 0.88;
+const IMAGE_CONTAINER_WIDTH = 189;
+const IMAGE_CONTAINER_HEIGHT = 252;
 
 const profileImages: { [key: string]: ImageSourcePropType } = {
   profile_vibbyRed: require('../assets/images/profile_vibbyRed.png'),
@@ -40,67 +49,145 @@ const profileImages: { [key: string]: ImageSourcePropType } = {
 
 export default function NewThreadModal({ isVisible, onClose, userPhoto, username }: NewThreadModalProps) {
   const [postText, setPostText] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const translateY = useRef(new Animated.Value(MODAL_HEIGHT)).current;
+  const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [modalVisible, setModalVisible] = useState(isVisible);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return gestureState.dy > 0 && postText.length === 0;
-      },
-      onPanResponderGrant: () => {
-        setIsDragging(true);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        setIsDragging(false);
-        if (gestureState.dy > MODAL_HEIGHT / 4) {
-          closeModal();
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  const { user } = useAuth();
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
       setModalVisible(true);
-      Animated.spring(translateY, {
-        toValue: 0,
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
         useNativeDriver: true,
       }).start();
     }
   }, [isVisible]);
 
+  const handleCancel = () => {
+    if (postText.length > 0 || selectedImages.length > 0) {
+      Alert.alert(
+        "Discard Post?",
+        "Are you sure you want to discard this post?",
+        [
+          {
+            text: "Cancel",
+            onPress: () => {},
+            style: "cancel"
+          },
+          { 
+            text: "Discard", 
+            onPress: () => closeModal(),
+            style: "destructive"
+          }
+        ],
+        { cancelable: false }
+      );
+    } else {
+      closeModal();
+    }
+  };
+
   const closeModal = () => {
-    Animated.timing(translateY, {
-      toValue: MODAL_HEIGHT,
+    Animated.timing(slideAnim, {
+      toValue: 0,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
       setModalVisible(false);
       onClose();
+      // Reset the state
+      setPostText('');
+      setSelectedImages([]);
     });
   };
 
-  const handlePost = () => {
-    // TODO: Implement post functionality
-    console.log('Posting:', postText);
-    setPostText('');
-    closeModal();
+  const handlePost = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to post.');
+      return;
+    }
+
+    if (postText.length === 0) {
+      Alert.alert('Error', 'Post content cannot be empty.');
+      return;
+    }
+
+    if (postText.length > 500) {
+      Alert.alert('Error', 'Post content cannot exceed 500 characters.');
+      return;
+    }
+
+    try {
+      console.log('Starting post creation process...');
+      console.log('User ID:', user.id);
+      console.log('Post content:', postText);
+      console.log('Number of images:', selectedImages.length);
+
+      const uploadedImageUrls = await Promise.all(selectedImages.map(image => uploadImage(image.uri, user.id)));
+      
+      console.log('Uploaded image URLs:', uploadedImageUrls);
+
+      const result = await createPost({
+        userId: user.id,
+        content: postText,
+        images: uploadedImageUrls,
+      });
+
+      if (result.success) {
+        console.log('Post created successfully:', result.data);
+        Alert.alert('Success', 'Your post has been created!');
+        closeModal();
+      } else {
+        console.error('Failed to create post:', result.msg);
+        Alert.alert('Error', result.msg || 'Failed to create post. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    }
   };
 
-  // Get the correct image source based on the userPhoto value
+  const handleImagePick = async () => {
+    if (selectedImages.length >= 5) {
+      Alert.alert('Error', 'You can only select up to 5 images.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const newImages = result.assets.slice(0, 5 - selectedImages.length);
+      setSelectedImages([...selectedImages, ...newImages]);
+    }
+  };
+
+  const handleCameraPick = async () => {
+    if (selectedImages.length >= 5) {
+      Alert.alert('Error', 'You can only select up to 5 images.');
+      return;
+    }
+
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Error', 'Camera permission is required to take photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImages([...selectedImages, result.assets[0]]);
+    }
+  };
+
   const getImageSource = (): ImageSourcePropType => {
     if (userPhoto in profileImages) {
       return profileImages[userPhoto];
@@ -110,30 +197,48 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
 
   const imageSource = getImageSource();
 
+  const renderImageItem = ({ item }: { item: ImagePicker.ImagePickerAsset }) => (
+    <View style={styles.imageWrapper}>
+      <Image 
+        source={{ uri: item.uri }} 
+        style={styles.selectedImage} 
+        resizeMode="cover"
+      />
+    </View>
+  );
+
+  const keyboardAvoidingViewProps: KeyboardAvoidingViewProps = Platform.OS === 'ios'
+    ? { behavior: 'padding', keyboardVerticalOffset: 100 }
+    : { behavior: 'height' };
+
   return (
     <Modal
       animationType="none"
       transparent={true}
       visible={modalVisible}
-      onRequestClose={closeModal}
+      onRequestClose={handleCancel}
     >
       <View style={styles.modalContainer}>
-        <Animated.View
+        <Animated.View 
           style={[
             styles.modalContent,
             {
-              transform: [{ translateY: translateY }],
-            },
+              transform: [{
+                translateY: slideAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [MODAL_HEIGHT, 0]
+                })
+              }]
+            }
           ]}
-          {...panResponder.panHandlers}
         >
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            {...keyboardAvoidingViewProps}
             style={{ flex: 1 }}
           >
             <SafeAreaView style={{ flex: 1 }}>
               <View style={styles.header}>
-                <TouchableOpacity onPress={closeModal}>
+                <TouchableOpacity onPress={handleCancel}>
                   <Text style={styles.cancelButton}>Cancel</Text>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>New Vibe</Text>
@@ -141,35 +246,51 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
                   <Ionicons name="ellipsis-horizontal" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <View style={styles.contentContainer}>
-                <Image source={imageSource} style={styles.photo} />
-                <View style={styles.rightContent}>
-                  <Text style={styles.username}>{username}</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="What's vibing you too?"
-                    placeholderTextColor="#666"
-                    value={postText}
-                    onChangeText={setPostText}
-                    multiline
-                    autoFocus
-                  />
-                  <View style={styles.iconContainer}>
-                    <TouchableOpacity style={styles.iconButton}>
-                      <Ionicons name="image-outline" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                      <Ionicons name="camera-outline" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                      <Ionicons name="mic-outline" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                      <Ionicons name="list-outline" size={24} color="#fff" />
-                    </TouchableOpacity>
+              <ScrollView style={styles.contentContainer}>
+                <View style={styles.userInfoContainer}>
+                  <Image source={imageSource} style={styles.photo} />
+                  <View style={styles.rightContent}>
+                    <Text style={styles.username}>{username}</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="What's vibing you too?"
+                      placeholderTextColor="#666"
+                      value={postText}
+                      onChangeText={setPostText}
+                      multiline
+                      autoFocus
+                      maxLength={500}
+                    />
+                    {selectedImages.length > 0 && (
+                      <FlatList
+                        data={selectedImages}
+                        renderItem={renderImageItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.selectedImagesContainer}
+                        snapToInterval={IMAGE_CONTAINER_WIDTH + 8}
+                        snapToAlignment="start"
+                        decelerationRate="fast"
+                      />
+                    )}
+                    <View style={styles.iconContainer}>
+                      <TouchableOpacity style={styles.iconButton} onPress={handleImagePick}>
+                        <Ionicons name="image-outline" size={24} color="#fff" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconButton} onPress={handleCameraPick}>
+                        <Ionicons name="camera-outline" size={24} color="#fff" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="mic-outline" size={24} color="#fff" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="list-outline" size={24} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </ScrollView>
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Anyone can reply & quote</Text>
                 <TouchableOpacity style={styles.postButton} onPress={handlePost}>
@@ -215,9 +336,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   contentContainer: {
-    flexDirection: 'row',
+    flex: 1,
     padding: 16,
-    paddingHorizontal: 5
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
   },
   photo: {
     width: 40,
@@ -240,10 +363,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingVertical: 8,
   },
+  selectedImagesContainer: {
+    paddingRight: 16,
+    marginBottom: 16,
+  },
+  imageWrapper: {
+    width: IMAGE_CONTAINER_WIDTH,
+    height: IMAGE_CONTAINER_HEIGHT,
+    marginRight: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#333',
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+  },
   iconContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
     flexWrap: 'wrap',
+    marginTop: 16,
   },
   iconButton: {
     marginRight: 20,
@@ -253,7 +393,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: '#333',
   },
