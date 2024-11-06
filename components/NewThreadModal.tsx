@@ -17,6 +17,7 @@ import {
   ScrollView,
   Animated,
   KeyboardAvoidingViewProps,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -54,11 +55,34 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
   const { user } = useAuth();
   const slideAnim = useRef(new Animated.Value(0)).current;
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 0 && (postText.length === 0 && selectedImages.length === 0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          slideAnim.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > MODAL_HEIGHT / 4) {
+          closeModal();
+        } else {
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   useEffect(() => {
     if (isVisible) {
       setModalVisible(true);
       Animated.timing(slideAnim, {
-        toValue: 1,
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
@@ -91,7 +115,7 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
 
   const closeModal = () => {
     Animated.timing(slideAnim, {
-      toValue: 0,
+      toValue: MODAL_HEIGHT,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
@@ -109,8 +133,8 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
       return;
     }
 
-    if (postText.length === 0) {
-      Alert.alert('Error', 'Post content cannot be empty.');
+    if (postText.length === 0 && selectedImages.length === 0) {
+      Alert.alert('Error', 'Please enter some text or select at least one image.');
       return;
     }
 
@@ -224,13 +248,11 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
             styles.modalContent,
             {
               transform: [{
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [MODAL_HEIGHT, 0]
-                })
+                translateY: slideAnim
               }]
             }
           ]}
+          {...panResponder.panHandlers}
         >
           <KeyboardAvoidingView
             {...keyboardAvoidingViewProps}
@@ -293,7 +315,14 @@ export default function NewThreadModal({ isVisible, onClose, userPhoto, username
               </ScrollView>
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Anyone can reply & quote</Text>
-                <TouchableOpacity style={styles.postButton} onPress={handlePost}>
+                <TouchableOpacity 
+                  style={[
+                    styles.postButton, 
+                    (postText.length === 0 && selectedImages.length === 0) && styles.postButtonDisabled
+                  ]} 
+                  onPress={handlePost}
+                  disabled={postText.length === 0 && selectedImages.length === 0}
+                >
                   <Text style={styles.postButtonText}>Post</Text>
                 </TouchableOpacity>
               </View>
@@ -393,7 +422,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#333',
   },
@@ -406,6 +435,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  postButtonDisabled: {
+    backgroundColor: '#3A93FA80',
   },
   postButtonText: {
     color: '#fff',

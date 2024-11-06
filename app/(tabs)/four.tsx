@@ -8,6 +8,7 @@ import { fetchUserPosts } from '@/services/postService';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import EditProfileModal from '@/components/EditProfileModal';
 import OwnProfileModal from '@/components/OwnProfileModal';
+import SettingsModal from '@/components/SettingsModal';
 import PostItem from '@/components/PostItem';
 
 const { width } = Dimensions.get('window');
@@ -32,6 +33,7 @@ export default function TabFourScreen() {
   const [vibeFacts, setVibeFacts] = useState<string[]>([]);
   const [isEditProfileModalVisible, setIsEditProfileModalVisible] = useState(false);
   const [isOwnProfileModalVisible, setIsOwnProfileModalVisible] = useState(false);
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userImages, setUserImages] = useState<string[]>([]);
   const [userTags, setUserTags] = useState<string[]>([]);
@@ -114,6 +116,14 @@ export default function TabFourScreen() {
     setIsOwnProfileModalVisible(false);
   };
 
+  const handleOpenSettingsModal = () => {
+    setIsSettingsModalVisible(true);
+  };
+
+  const handleCloseSettingsModal = () => {
+    setIsSettingsModalVisible(false);
+  };
+
   if (!user) {
     return (
       <View style={styles.container}>
@@ -138,7 +148,7 @@ export default function TabFourScreen() {
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleOpenSettingsModal}>
               <Ionicons name="menu" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -189,10 +199,12 @@ export default function TabFourScreen() {
                 {userPosts.map((post, index) => (
                   <PostItem
                     key={index}
+                    id={post.id}
                     username={user.name || 'User'}
                     content={post.content}
                     createdAt={post.created_at}
-                    vibeParameter={post.vibe_parameter || 0}
+                    averageVibe={post.average_vibe}
+                    vibeCount={post.vibe_count}
                     commentCount={post.comment_count || 0}
                     userPhoto={user.profile_picture || 'profile_vibbyBlue'}
                     images={post.images}
@@ -230,6 +242,11 @@ export default function TabFourScreen() {
             }}
           />
         )}
+
+        <SettingsModal
+          isVisible={isSettingsModalVisible}
+          onClose={handleCloseSettingsModal}
+        />
       </View>
     </ScreenWrapper>
   );

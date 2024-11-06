@@ -1,17 +1,26 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ImageSourcePropType, ScrollView, Modal, Dimensions, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { timeAgo } from '@/utils/timeAgo';
+import CommentSectionModal from './CommentSectionModal';
+import { getPostWithAverageVibe } from '@/services/postService';
 
 interface PostItemProps {
+  id: string;
   username: string;
   content: string;
   createdAt: string;
-  vibeParameter: number;
   commentCount: number;
   userPhoto: string;
   images?: string[];
+  averageVibe?: number;
+  vibeCount?: number;
 }
+
+const IMAGE_CONTAINER_WIDTH = 189;
+const IMAGE_CONTAINER_HEIGHT = 252;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const profileImages: { [key: string]: ImageSourcePropType } = {
   profile_vibbyRed: require('@/assets/images/profile_vibbyRed.png'),
@@ -25,14 +34,35 @@ const profileImages: { [key: string]: ImageSourcePropType } = {
 };
 
 const PostItem: React.FC<PostItemProps> = ({ 
+  id,
   username, 
   content, 
   createdAt, 
-  vibeParameter, 
   commentCount, 
   userPhoto,
-  images 
+  images,
+  averageVibe: initialAverageVibe,
+  vibeCount: initialVibeCount
 }) => {
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
+  const [averageVibe, setAverageVibe] = useState<number | null>(initialAverageVibe || null);
+  const [vibeCount, setVibeCount] = useState(initialVibeCount || 0);
+
+  useEffect(() => {
+    if (initialAverageVibe === undefined || initialVibeCount === undefined) {
+      fetchPostData();
+    }
+  }, [id, initialAverageVibe, initialVibeCount]);
+
+  const fetchPostData = async () => {
+    const result = await getPostWithAverageVibe(id);
+    if (result.success && result.post) {
+      setAverageVibe(result.post.average_vibe);
+      setVibeCount(result.post.vibe_count);
+    }
+  };
+
   const getImageSource = (): ImageSourcePropType => {
     if (userPhoto in profileImages) {
       return profileImages[userPhoto as keyof typeof profileImages];
@@ -41,6 +71,14 @@ const PostItem: React.FC<PostItemProps> = ({
   };
 
   const imageSource = getImageSource();
+
+  const handleImagePress = (image: string) => {
+    setZoomedImage(image);
+  };
+
+  const closeZoomedImage = () => {
+    setZoomedImage(null);
+  };
 
   return (
     <View style={styles.container}>
@@ -58,26 +96,61 @@ const PostItem: React.FC<PostItemProps> = ({
           </View>
           <Text style={styles.content}>{content}</Text>
           {images && images.length > 0 && (
-            <View style={styles.imageContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.imageScrollContainer}
+            >
               {images.map((image, index) => (
-                <Image key={index} source={{ uri: image }} style={styles.postImage} />
+                <TouchableOpacity key={index} onPress={() => handleImagePress(image)}>
+                  <View style={styles.imageWrapper}>
+                    <Image source={{ uri: image }} style={styles.postImage} />
+                  </View>
+                </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           )}
           <View style={styles.footer}>
             <View style={styles.interactionContainer}>
               <View style={styles.vibeContainer}>
                 <Ionicons name="pulse" size={18} color="#3A93FA" />
-                <Text style={styles.vibeText}>{vibeParameter}</Text>
+                <Text style={styles.vibeText}>
+                  {averageVibe !== null ? `${averageVibe.toFixed(1)}% (${vibeCount})` : 'No vibes yet'}
+                </Text>
               </View>
-              <View style={styles.commentContainer}>
+              <TouchableOpacity 
+                style={styles.commentContainer}
+                onPress={() => setIsCommentModalVisible(true)}
+              >
                 <Ionicons name="chatbubble-outline" size={18} color="#fff" />
                 <Text style={styles.commentCount}>{commentCount}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </View>
+      <Modal
+        visible={zoomedImage !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeZoomedImage}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <TouchableOpacity style={styles.modalBackground} onPress={closeZoomedImage}>
+            <Image source={{ uri: zoomedImage || undefined }} style={styles.zoomedImage} resizeMode="contain" />
+            <TouchableOpacity style={styles.closeButton} onPress={closeZoomedImage}>
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </Modal>
+      <CommentSectionModal
+        isVisible={isCommentModalVisible}
+        onClose={() => setIsCommentModalVisible(false)}
+        postId={id}
+        postAuthor={username}
+        postAuthorPhoto={userPhoto}
+      />
     </View>
   );
 };
@@ -91,13 +164,13 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 0,
+    paddingHorizontal: 16,
   },
   profileImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: 4,
   },
   rightContent: {
     flex: 1,
@@ -126,16 +199,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 12,
   },
-  imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  imageScrollContainer: {
     marginBottom: 12,
+  },
+  imageWrapper: {
+    width: IMAGE_CONTAINER_WIDTH,
+    height: IMAGE_CONTAINER_HEIGHT,
+    marginRight: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   postImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 8,
+    height: '100%',
   },
   footer: {
     flexDirection: 'row',
@@ -163,6 +239,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 4,
     fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomedImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    padding: 10,
   },
 });
 

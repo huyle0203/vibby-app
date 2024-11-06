@@ -171,3 +171,108 @@ export const fetchAllPosts = async (): Promise<{ success: boolean; posts?: any[]
     return { success: false, msg: (error as Error).message };
   }
 };
+
+export const updateVibePercentage = async (postId: string, userId: string, vibePercentage: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('post_vibes')
+      .upsert(
+        { post_id: postId, user_id: userId, vibe_percentage: vibePercentage },
+        { onConflict: 'post_id,user_id' }
+      )
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error updating vibe percentage:', error);
+    return { success: false, error };
+  }
+};
+
+export const getVibePercentage = async (postId: string, userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('post_vibes')
+      .select('vibe_percentage')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) throw error;
+    return { success: true, vibePercentage: data?.vibe_percentage };
+  } catch (error) {
+    console.error('Error fetching vibe percentage:', error);
+    return { success: false, error };
+  }
+};
+
+export const updatePostVibe = async (postId: string, userId: string, vibePercentage: number) => {
+  try {
+    console.log(`Updating vibe for post ${postId}, user ${userId}, vibe ${vibePercentage}`);
+
+    // First, upsert the user's vibe for this post
+    const { error: upsertError } = await supabase
+      .from('post_vibes')
+      .upsert({ post_id: postId, user_id: userId, vibe_percentage: vibePercentage }, { onConflict: 'post_id,user_id' });
+
+    if (upsertError) {
+      console.error('Error upserting vibe:', upsertError);
+      throw upsertError;
+    }
+    console.log('Vibe upserted successfully');
+
+    // Then, calculate the new average vibe and update the post
+    const { data: averageData, error: averageError } = await supabase
+      .rpc('calculate_average_vibe', { post_id: postId });
+
+    if (averageError) {
+      console.error('Error calculating average vibe:', averageError);
+      throw averageError;
+    }
+    console.log('Average vibe calculated:', averageData);
+
+    if (!averageData) {
+      console.error('No average data returned');
+      throw new Error('Failed to calculate average vibe');
+    }
+
+    const { error: updateError } = await supabase
+      .from('posts')
+      .update({ 
+        average_vibe: averageData.average_vibe, 
+        vibe_count: averageData.vibe_count 
+      })
+      .eq('id', postId);
+
+    if (updateError) {
+      console.error('Error updating post:', updateError);
+      throw updateError;
+    }
+    console.log('Post updated successfully');
+
+    return { success: true, averageVibe: averageData.average_vibe, vibeCount: averageData.vibe_count };
+  } catch (error) {
+    console.error('Error in updatePostVibe:', error);
+    return { success: false, error: (error as Error).message };
+  }
+};
+
+export const getPostWithAverageVibe = async (postId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*, user:users(name, profile_picture)')
+      .eq('id', postId)
+      .single();
+
+    if (error) throw error;
+
+    console.log('Fetched post with average vibe:', data);
+
+    return { success: true, post: data };
+  } catch (error) {
+    console.error('Error fetching post with average vibe:', error);
+    return { success: false, error: (error as Error).message };
+  }
+};

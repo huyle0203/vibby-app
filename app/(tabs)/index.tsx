@@ -25,11 +25,12 @@ interface Post {
   };
 }
 
+const HEADER_HEIGHT = 50; // Adjust this value based on your header's height
+
 export default function TabOneScreen() {
   const animationRef = useRef<Lottie>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [isHeaderVisible, setHeaderVisible] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const { user, setUserData } = useAuth();
@@ -75,12 +76,18 @@ export default function TabOneScreen() {
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    { useNativeDriver: false }
+    { useNativeDriver: true }
   );
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
+    inputRange: [0, HEADER_HEIGHT],
     outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, HEADER_HEIGHT],
+    outputRange: [0, -HEADER_HEIGHT],
     extrapolate: 'clamp',
   });
 
@@ -98,66 +105,65 @@ export default function TabOneScreen() {
   console.log('Current user state:', user);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={{ opacity: headerOpacity }}>
-        <Header />
-      </Animated.View>
-      <Animated.ScrollView
-        ref={scrollViewRef}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={styles.scrollViewContent}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={handleRefresh}
-            tintColor={"transparent"}
+    <View style={styles.container}>
+      <Header opacity={headerOpacity} translateY={headerTranslateY} />
+      <SafeAreaView style={styles.safeArea}>
+        <Animated.ScrollView
+          ref={scrollViewRef}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scrollViewContent}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={handleRefresh}
+              tintColor={"transparent"}
+            />
+          }
+        >
+          <Lottie 
+            ref={animationRef}
+            source={require("../../assets/lottie-animations/penguin.json")}
+            loop={false}
+            autoPlay
+            style={styles.lottieAnimation}
           />
-        }
-      >
-        <Lottie 
-          ref={animationRef}
-          source={require("../../assets/lottie-animations/penguin.json")}
-          loop={false}
-          autoPlay
-          style={styles.lottieAnimation}
-        />
-        {user && (
-          <PostCreationArea 
-            userPhoto={user.profile_picture || 'profile_vibbyBlue'}
-            username={user.name || 'User'}
-          />
-        )}
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <View key={post.id}>
-              <Text style={styles.debugText}>Post ID: {post.id}</Text>
-              <Text style={styles.debugText}>User ID: {post.user_id}</Text>
+          {user && (
+            <PostCreationArea 
+              userPhoto={user.profile_picture || 'profile_vibbyBlue'}
+              username={user.name || 'User'}
+            />
+          )}
+          {posts.length > 0 ? (
+            posts.map((post) => (
               <PostItemFriends
+                key={post.id}
+                id={post.id}
                 username={post.user.name}
                 content={post.content}
                 createdAt={post.created_at}
                 vibeParameter={post.average_vibe || 0}
                 commentCount={0}
                 userPhoto={post.user.profile_picture || 'profile_vibbyBlue'}
+                images={post.images}
               />
+            ))
+          ) : (
+            <View style={styles.noPostsContainer}>
+              <Image
+                source={require('../../assets/images/vibbyFind.png')}
+                style={styles.noPostsImage}
+              />
+              <Text style={styles.noPostsText}>Hey, it seems like you got no biches yet.</Text>
+              <Text style={styles.noPostsText}>Time to find some, will ya?</Text>
+              <TouchableOpacity style={styles.findFriendsButton} onPress={handleFindFriends}>
+                <Text style={styles.findFriendsButtonText}>Let's find friends</Text>
+              </TouchableOpacity>
             </View>
-          ))
-        ) : (
-          <View style={styles.noPostsContainer}>
-            <Image
-              source={require('../../assets/images/vibbyFind.png')}
-              style={styles.noPostsImage}
-            />
-            <Text style={styles.noPostsText}>Hey, it seems like you got no biches yet.</Text>
-            <Text style={styles.noPostsText}>Time to find some, will ya?</Text>
-            <TouchableOpacity style={styles.findFriendsButton} onPress={handleFindFriends}>
-              <Text style={styles.findFriendsButtonText}>Let's find friends</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </Animated.ScrollView>
-    </SafeAreaView>
+          )}
+        </Animated.ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -166,19 +172,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  safeArea: {
+    flex: 1,
+  },
   scrollViewContent: {
-    paddingHorizontal: 5,
-    paddingTop: Platform.select({ android: 30, ios: 0 }),
+    paddingTop: HEADER_HEIGHT,
   },
   lottieAnimation: {
     width: 90,
     height: 90,
     alignSelf: "center",
-  },
-  debugText: {
-    color: '#888',
-    fontSize: 12,
-    marginBottom: 4,
   },
   noPostsContainer: {
     flex: 1,
